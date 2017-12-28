@@ -1,0 +1,11 @@
+{
+	"name": "time-error-correction-d",
+	"authors": [
+		"Elia Gorokhovsky"
+	],
+	"dependencies": {
+	},
+	"description": "A project to correct misreported observation times in data assimilation",
+	"copyright": "Copyright © 2017, Elia Gorokhovsky",
+	"license": "proprietary"
+}
