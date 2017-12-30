@@ -1,6 +1,7 @@
 module data.Vector;
 
 import std.conv;
+import mir.ndslice;
 
 /**
  * A three-dimensional vector
@@ -13,8 +14,17 @@ struct Vector {
     double y;
     double z;
 
+    /**
+     * Gets a string representing the vector
+     */
     @property string toString() {
-        return "(" ~ this.x.to!string ~ "," ~ this.y.to!string ~ "," ~ this.z.to!string ~ ")";
+        return "<" ~ this.x.to!string ~ "," ~ this.y.to!string ~ "," ~ this.z.to!string ~ ">";
     }
 
+    /**
+     * Gets the components of the vector as an array
+     */
+    @property double[] handle() {
+        return [this.x, this.y, this.z];
+    }
 }

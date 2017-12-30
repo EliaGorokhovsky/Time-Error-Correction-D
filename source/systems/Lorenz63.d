@@ -1,4 +1,4 @@
-module Lorenz63;
+module systems.Lorenz63;
 
 import data.Vector;
 import systems.System;
@@ -18,11 +18,11 @@ class Lorenz63 : System {
         this.beta = beta;
     }
 
-    override Vector slope(Vector state) {
+    override Vector opCall(Vector state) {
         return Vector(
-            this.sigma*(state.y-state.x),
-            state.x*(this.rho-state.z)-state.y,
-            state.x*state.y-this.beta*state.z
+            this.sigma * (state.y - state.x),
+            state.x * (this.rho - state.z) - state.y,
+            state.x * state.y - this.beta * state.z
         );
     }
 
@@ -32,8 +32,8 @@ unittest {
 
     import std.stdio;
 
-    writeln("UNITTEST: Lorenz63");
+    writeln("\nUNITTEST: Lorenz63");
     Lorenz63 L63 = new Lorenz63();
-    writeln("Application of L63 to (1, 1, 1) with parameters (1, 1, 1) results in velocity " ~ L63.slope(Vector(1, 1, 1)).toString);
+    writeln("Application of L63 to (1, 1, 1) with parameters (1, 1, 1) results in velocity " ~ L63(Vector(1, 1, 1)).toString);
 
 }

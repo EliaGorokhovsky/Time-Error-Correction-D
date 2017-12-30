@@ -9,6 +9,6 @@ import data.Vector;
  */
 abstract class System {
 
-    Vector slope(Vector state);     ///The system's defining equations; takes in a position vector and returns a velocity vector for use in an integrator
+    Vector opCall(Vector state);     ///The system's defining equations; takes in a position vector and returns a velocity vector for use in an integrator
 
 }
