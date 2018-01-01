@@ -34,6 +34,6 @@ unittest {
 
     writeln("\nUNITTEST: Lorenz63");
     Lorenz63 L63 = new Lorenz63();
-    writeln("Application of L63 to (1, 1, 1) with parameters (1, 1, 1) results in velocity " ~ L63(Vector(1, 1, 1)).toString);
+    writeln("Application of L63 to (1, 1, 1) with parameters (1, 1, 1) results in velocity ", L63(Vector(1, 1, 1)));
 
 }

@@ -27,4 +27,32 @@ struct Vector {
     @property double[] handle() {
         return [this.x, this.y, this.z];
     }
+
+    /**
+     * Handles vector addition and subtraction
+     */
+    Vector opBinary(string op)(Vector other) {
+        static if (op == "+") return Vector(this.x + other.x, this.y + other.y, this.z + other.z);
+        else static if (op == "-") return Vector(this.x - other.x, this.y - other.y, this.z - other.z);
+        return Vector(0, 0, 0);
+    }
+
+    /**
+     * Handles scalar addition, subtraction, multiplication and division
+     */
+    Vector opBinary(string op)(double scalar) {
+        static if (op == "*") return Vector(this.x * scalar, this.y * scalar, this.z * scalar);
+        else static if (op == "/") return Vector(this.x / scalar, this.y / scalar, this.z / scalar);
+        return Vector(0, 0, 0);
+    }
+}
+
+unittest {
+
+    import std.stdio;
+
+    writeln("\nUNITTEST: Vector");
+    writeln(Vector(1, 2, 3), " + ", Vector(3, 2, 1), " = ", Vector(1, 2, 3) + Vector(3, 2, 1));
+    writeln(Vector(1, 2, 3), " x 2 = ", Vector(1, 2, 3) * 2);
+
 }
