@@ -210,5 +210,6 @@ unittest {
     " and standard deviation ", test2.eStandardDeviation, 
     " assimilated to <0, 0, 0> with likelihood standard deviation <1, 1, 1> returns an ensemble with mean ",
     result2.eMean, " and standard deviation ", result2.eStandardDeviation);*/
+    writeln("RHF observation increments on [1, 3, 2] and [0, 1, 2] are: ", rhf1.getObservationIncrements([1, 3, 2], [0, 1, 2]));
 
 }
