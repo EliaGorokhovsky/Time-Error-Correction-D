@@ -34,7 +34,7 @@ struct Vector {
     Vector opBinary(string op)(Vector other) {
         static if (op == "+") return Vector(this.x + other.x, this.y + other.y, this.z + other.z);
         else static if (op == "-") return Vector(this.x - other.x, this.y - other.y, this.z - other.z);
-        return Vector(0, 0, 0);
+        else return Vector(0, 0, 0);
     }
 
     /**
@@ -43,7 +43,7 @@ struct Vector {
     Vector opBinary(string op)(double scalar) {
         static if (op == "*") return Vector(this.x * scalar, this.y * scalar, this.z * scalar);
         else static if (op == "/") return Vector(this.x / scalar, this.y / scalar, this.z / scalar);
-        return Vector(0, 0, 0);
+        else return Vector(0, 0, 0);
     }
 }
 

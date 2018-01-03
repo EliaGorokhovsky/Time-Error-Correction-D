@@ -1,9 +1,10 @@
 module integrators.RK4;
 
-import data.Vector;
-import integrators.Integrator;
 import std.algorithm;
 import std.array;
+import data.Ensemble;
+import data.Vector;
+import integrators.Integrator;
 import systems.System;
 
 /**
@@ -16,13 +17,21 @@ class RK4 : Integrator {
         this.slope = slope;
     }
 
+    Vector opCall(Vector state, double dt) {
+        return this.integrate(state, dt);
+    }
+
+    Ensemble opCall(Ensemble ensemble, double dt) {
+        return this.integrateEnsemble(ensemble, dt);
+    }
+
     /**
-     * The integrator's opCall method
+     * The integrator's main method
      * Used for numerical solution of differential equations
      * Accurate to O(dt^5)
      * Returns a state given a state and a change in time
      */
-    Vector opCall(Vector state, double dt) {
+    override Vector integrate(Vector state, double dt) {
         double[] k1 = this.slope(state).handle.map!(a => a * dt).array;
         double[] k2 = this.slope(
             Vector(state.x + 0.5 * k1[0], state.y + 0.5 * k1[1], state.z + 0.5 * k1[2])
@@ -40,6 +49,13 @@ class RK4 : Integrator {
         );
     }
 
+    /**
+     * Integrates an ensemble 
+     */
+    override Ensemble integrateEnsemble(Ensemble ensemble, double dt) {
+        return new Ensemble(ensemble.members.map!(a => this.integrate(a, dt)).array);
+    }
+
 }
 
 unittest {
@@ -55,5 +71,6 @@ unittest {
     writeln("Base (0, 0, 0) with dt = 1: " ~ rk4(Vector(0, 0, 0), 1).toString);
     writeln("Base (0, 0, 0) with dt = 0.5: " ~ rk4(Vector(0, 0, 0), 0.5).toString);
     writeln("Base (1, 2, 3) with dt = 1: " ~ rk4(Vector(1, 2, 3), 1).toString);
+    writeln("Base Ensemble((3, 2, 1), (1, 2, 3)) with dt = 1: " ~ rk4(new Ensemble([Vector(1, 2, 3), Vector(3, 2, 1)]), 1).toString);
 
 }

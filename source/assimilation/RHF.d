@@ -81,10 +81,10 @@ class RHF : Assimilator {
         }
         //Compute partial Gaussian kernels for tails of prior
         immutable double distanceForUnitSpread = -1 * weightedNormInverse(1, 0, 1, 1.0 / (priorValues.length + 1));
-        immutable double leftMean = sortedPrior[0] + distanceForUnitSpread * standardDeviation(sortedPrior);
-        immutable double leftStandardDeviation = standardDeviation(sortedPrior);
-        immutable double rightMean = sortedPrior[$ - 1] - distanceForUnitSpread * standardDeviation(sortedPrior);
-        immutable double rightStandardDeviation = standardDeviation(sortedPrior); 
+        immutable double leftMean = sortedPrior[0] + distanceForUnitSpread * standardDeviation(sortedPrior, 1);
+        immutable double leftStandardDeviation = standardDeviation(sortedPrior, 1);
+        immutable double rightMean = sortedPrior[$ - 1] - distanceForUnitSpread * standardDeviation(sortedPrior, 1);
+        immutable double rightStandardDeviation = standardDeviation(sortedPrior, 1); 
         //Assume flat tails in likelihood. TODO: Allow for Gaussian tails (should only be relevant for nearly Gaussian likelihoods.)
         immutable double leftProductWeight = likelihood[indices[0]];    
         immutable double rightProductWeight = likelihood[indices[$ - 1]];
@@ -211,5 +211,6 @@ unittest {
     " assimilated to <0, 0, 0> with likelihood standard deviation <1, 1, 1> returns an ensemble with mean ",
     result2.eMean, " and standard deviation ", result2.eStandardDeviation);*/
     writeln("RHF observation increments on [1, 3, 2] and [0, 1, 2] are: ", rhf1.getObservationIncrements([1, 3, 2], [0, 1, 2]));
+    writeln("RHF observation increments on [0, 1, 2] and [1, 1, 1] are: ", rhf1.getObservationIncrements([0, 1, 2], [1, 1, 2]));
 
 }

@@ -163,16 +163,16 @@ class Ensemble {
      * Handles shifting the ensemble without creating a new one
      */
     void opOpAssign(string op)(Vector other) {
-        static if (op == "+") this.members = this.members.map!(a => a + other).array;
-        else static if (op == "-") this.members = this.members.map!(a => a - other).array;
+        static if (op == "+=") this.members = this.members.map!(a => a + other).array;
+        else static if (op == "-=") this.members = this.members.map!(a => a - other).array;
     }
 
     /**
      * Handles scaling the ensemble without creating a new one
      */
     void opOpAssign(string op)(double scalar) {
-        static if (op == "*") this.members = this.members.map!(a => this.eMean + (a - this.eMean) * scalar).array;
-        else static if (op == "/") this.members = this.members.map!(a => this.eMean + (a - this.eMean) / scalar).array;
+        static if (op == "*=") this.members = this.members.map!(a => this.eMean + (a - this.eMean) * scalar).array;
+        else static if (op == "/=") this.members = this.members.map!(a => this.eMean + (a - this.eMean) / scalar).array;
     }
 
     /**
