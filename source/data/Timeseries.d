@@ -8,8 +8,21 @@ module data.Timeseries;
 class Timeseries(T) {
 
     T[] members; ///The list of the object's states 
+    double[] times; ///The list of times corresponding to the object's states
 
     alias members this;
+
+    /**
+     * Returns an associative array associating time with state
+     */
+    @property T[double] timeAssociate() {
+        assert(this.members.length == this.times.length);
+        T[double] association;
+        foreach(i; 0..this.members.length) {
+            association[this.times[i]] = this.members[i];
+        }
+        return association;
+    }
 
     /**
      * Constructs a timeseries from an existing list of states
@@ -21,7 +34,8 @@ class Timeseries(T) {
     /**
      * Adds an element to the timeseries
      */
-    void add(T state) {
+    void add(double time, T state) {
+        this.times ~= time;
         this.members ~= state;
     }
 

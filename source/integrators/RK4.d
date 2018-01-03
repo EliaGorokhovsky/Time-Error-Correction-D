@@ -17,14 +17,6 @@ class RK4 : Integrator {
         this.slope = slope;
     }
 
-    Vector opCall(Vector state, double dt) {
-        return this.integrate(state, dt);
-    }
-
-    Ensemble opCall(Ensemble ensemble, double dt) {
-        return this.integrateEnsemble(ensemble, dt);
-    }
-
     /**
      * The integrator's main method
      * Used for numerical solution of differential equations

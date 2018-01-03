@@ -12,6 +12,14 @@ abstract class Integrator {
 
     System slope;   ///Should store a function to return slope from position
 
+    Vector opCall(Vector state, double dt) {
+        return this.integrate(state, dt);
+    }
+
+    Ensemble opCall(Ensemble ensemble, double dt) {
+        return this.integrateEnsemble(ensemble, dt);
+    }
+
     Vector integrate(Vector state, double dt);
     Ensemble integrateEnsemble(Ensemble ensemble, double dt);
 

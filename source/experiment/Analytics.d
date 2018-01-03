@@ -28,8 +28,8 @@ unittest {
     Timeseries!Ensemble data = new Timeseries!Ensemble();
     Timeseries!Vector truth = new Timeseries!Vector();
     foreach(i; 0..10) {
-        data.add(new Ensemble([Vector(3, 0, 0), Vector(0, 0, 0), Vector(0, 0, 0)]));
-        truth.add(Vector(0, 0, 0));
+        data.add(i, new Ensemble([Vector(3, 0, 0), Vector(0, 0, 0), Vector(0, 0, 0)]));
+        truth.add(i, Vector(0, 0, 0));
     }
     writeln("Ensembles of ", data[0], " with Vector ", truth[0], " result in an RMSE of ", RMSE(data, truth));
 
