@@ -117,8 +117,8 @@ unittest {
     );
     Ensemble result1 = eakf(test1);
     Ensemble result2 = eakf(test2);
-    writeln(eakf.getPosterior(test1));
-    writeln(eakf.getPosterior(test2));
+    //writeln(eakf.getPosterior(test1));
+    //writeln(eakf.getPosterior(test2));
     writeln("Ensemble with mean ", test1.eMean, 
     " and standard deviation ", test1.eStandardDeviation, 
     " assimilated to <0, 0, 0> with likelihood standard deviation <1, 1, 1> returns an ensemble with mean ",

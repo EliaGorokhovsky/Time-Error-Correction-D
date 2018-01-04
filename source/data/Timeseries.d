@@ -13,8 +13,6 @@ class Timeseries(T) {
     T[] members; ///The list of the object's states 
     double[] times; ///The list of times corresponding to the object's states
 
-    alias members this;
-
     /**
      * Returns an associative array associating time with state
      */
@@ -30,8 +28,16 @@ class Timeseries(T) {
     /**
      * Constructs a timeseries from an existing list of states
      */
-    this(T[] members = null) {
+    this(T[] members, double[] times) {
         this.members = members;
+        this.times = times;
+    }
+
+    /**
+     * Constructs a timeseries with empty arrays for time and state
+     */
+    this() {
+
     }
 
     /**
@@ -52,6 +58,7 @@ class Timeseries(T) {
             return this.timeAssociate[time]; 
         }
         else {
+            import std.stdio;
             int lastCountedTime = this.times.countUntil!"a > b"(time) - 1;
             double dt = time - this.times[lastCountedTime];
             return integrator(this.timeAssociate[this.times[lastCountedTime]], dt);
@@ -77,7 +84,7 @@ unittest {
     }
     writeln("Times: ", timeseries.times);
     writeln("Time Series: ", timeseries.members);
-    writeln("Time Series(2): ", timeseries.value(2, new RK4(new Test())));
+    writeln("Time Series(2): ", timeseries.value(2));
     writeln("Time Series(2.5): ", timeseries.value(2.5, new RK4(new Test())));
 
 }

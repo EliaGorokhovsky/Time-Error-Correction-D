@@ -11,12 +11,12 @@ import data.Vector;
  * RMSE is the square root of the mean of the squares deviations of the ensemble means
  */
 double RMSE(Timeseries!Ensemble data, Timeseries!Vector truth) {
-    assert(data.length == truth.length);
+    assert(data.members.length == truth.members.length);
     double sumOfSquares = 0;
-    foreach(i; 0..truth.length) {
-        sumOfSquares += (truth[i].x - data[i].eMean.x).pow(2) + (truth[i].y - data[i].eMean.y).pow(2) + (truth[i].z - data[i].eMean.z).pow(2);
+    foreach(i; 0..truth.members.length) {
+        sumOfSquares += (truth.members[i].x - data.members[i].eMean.x).pow(2) + (truth.members[i].y - data.members[i].eMean.y).pow(2) + (truth.members[i].z - data.members[i].eMean.z).pow(2);
     }
-    double squareMean = sumOfSquares / truth.length;
+    double squareMean = sumOfSquares / truth.members.length;
     return sqrt(squareMean);
 }
 
@@ -31,6 +31,6 @@ unittest {
         data.add(i, new Ensemble([Vector(3, 0, 0), Vector(0, 0, 0), Vector(0, 0, 0)]));
         truth.add(i, Vector(0, 0, 0));
     }
-    writeln("Ensembles of ", data[0], " with Vector ", truth[0], " result in an RMSE of ", RMSE(data, truth));
+    writeln("Ensembles of ", data.members[0], " with Vector ", truth.members[0], " result in an RMSE of ", RMSE(data, truth));
 
 }

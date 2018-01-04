@@ -10,6 +10,10 @@ abstract class ErrorGenerator {
 
     Timeseries!Vector truth;
 
-    Vector opCall(double time);
+    Vector opCall(double time) {
+        return this.generate(time);
+    }
+
+    Vector generate(double time);
 
 }
