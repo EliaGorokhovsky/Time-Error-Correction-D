@@ -57,6 +57,6 @@ unittest {
     writeln("\nUNITTEST: Process");
     RK4 rk4 = new RK4(new Lorenz63());
     Experiment experiment = new Experiment(rk4);
-    writeln("Integrating <1, 1, 1> from 0 to 0.09 returns ", experiment.getTruth(Vector(1, 1, 1), 0, 0.01, 0.001));
+    writeln("Integrating <1, 1, 1> from 0 to 0.009 returns ", experiment.getTruth(Vector(1, 1, 1), 0, 0.01, 0.001));
 
 }
