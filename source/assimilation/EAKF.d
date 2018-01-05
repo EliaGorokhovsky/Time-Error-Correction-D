@@ -5,6 +5,7 @@ import std.array;
 import std.math;
 import std.typecons;
 import assimilation.Assimilator;
+import assimilation.Likelihood;
 import data.Ensemble;
 import data.Vector;
 import utility.ArrayStats;
@@ -22,9 +23,22 @@ class EAKF : Assimilator {
      * The constructor for an assimilator
      * Observation and likelihood are passed before assimilation
      */
-    this(Vector observation, Vector likelihood) {
-        this.observation = observation;
-        this.likelihood = likelihood;
+    this(Likelihood likelihoodVars) {
+        this.observation = likelihoodVars.gaussianMean;
+        this.likelihood = likelihoodVars.gaussianDeviation;
+    }
+
+    this() {
+
+    }
+
+    /**
+     * Sets the likelihood for the assimilator without creating a new one
+     * Takes output of a LikelihoodGetter
+     */
+    override void setLikelihood(Likelihood likelihoodVars) {
+        this.observation = likelihoodVars.gaussianMean;
+        this.likelihood = likelihoodVars.gaussianDeviation;
     }
 
     /**
@@ -104,7 +118,7 @@ unittest {
     import std.stdio;
 
     writeln("\nUNITTEST: EAKF");
-    EAKF eakf = new EAKF(Vector(0, 0, 0), Vector(1, 1, 1));
+    EAKF eakf = new EAKF(new Likelihood(Vector(0, 0, 0), Vector(1, 1, 1)));
     Ensemble test1 = new Ensemble(
         [1, 1, 1, 1, 1, 1 ,1, 1], 
         [1, 1, 1, 1, 1, 1 ,1, 1], 

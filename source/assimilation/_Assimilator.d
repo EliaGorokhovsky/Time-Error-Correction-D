@@ -1,5 +1,6 @@
 module assimilation.Assimilator;
 
+import assimilation.Likelihood;
 import data.Ensemble;
 import data.Vector;
 
@@ -10,5 +11,6 @@ import data.Vector;
 abstract class Assimilator {
 
     Ensemble opCall(Ensemble prior);    ///All data assimilation methods should have functionality for each assimilation step
+    void setLikelihood(Likelihood likelihood);
 
 }

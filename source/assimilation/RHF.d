@@ -7,6 +7,7 @@ import std.range;
 import std.stdio;
 import std.typecons;
 import assimilation.Assimilator;
+import assimilation.Likelihood;
 import data.Ensemble;
 import data.Vector;
 import utility.ArrayStats;
@@ -26,11 +27,25 @@ class RHF : Assimilator {
     double[] zLikelihood; ///The probabilities for the z-values of the ensemble
     bool rectangularQuadrature; ///Whether rectangular or trapezoidal quadrature will be used to calculate probabilities with likelihood
 
-    this(double[] xLikelihood, double[] yLikelihood, double[] zLikelihood, bool rectangularQuadrature) {
-        this.xLikelihood = xLikelihood;
-        this.yLikelihood = yLikelihood;
-        this.zLikelihood = zLikelihood;
+    this(Likelihood likelihood, bool rectangularQuadrature = true) {
+        this.xLikelihood = likelihood.xLikelihood;
+        this.yLikelihood = likelihood.yLikelihood;
+        this.zLikelihood = likelihood.zLikelihood;
         this.rectangularQuadrature = rectangularQuadrature;
+    }
+
+    this() {
+
+    }
+
+    /**
+     * Sets the likelihood for the assimilator without making a new one
+     * Takes the output of a likelihoodGetter
+     */
+    override void setLikelihood(Likelihood likelihood) {
+        this.xLikelihood = likelihood.xLikelihood;
+        this.yLikelihood = likelihood.yLikelihood;
+        this.zLikelihood = likelihood.zLikelihood;        
     }
 
     /**
@@ -186,7 +201,7 @@ unittest {
     import std.stdio;
 
     writeln("\nUNITTEST: RHF");
-    RHF rhf1 = new RHF([0, 0, 0.25, 0.5, 1, 0.5, 0.25, 0], [0, 0, 0.25, 0.5, 1, 0.5, 0.25, 0], [0, 0, 0.25, 0.5, 1, 0.5, 0.25, 0], true);
+    RHF rhf1 = new RHF(new Likelihood([0, 0, 0.25, 0.5, 1, 0.5, 0.25, 0], [0, 0, 0.25, 0.5, 1, 0.5, 0.25, 0], [0, 0, 0.25, 0.5, 1, 0.5, 0.25, 0]), true);
     Ensemble test1 = new Ensemble(
         [1, 2, 3, 4, 5, 6 ,7, 8], 
         [1, 2, 3, 4, 5, 6 ,7, 8], 
