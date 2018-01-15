@@ -82,7 +82,7 @@ class Timeseries(T) {
             return this.timeAssociate[time]; 
         }
         else {
-            ulong lastCountedTime = cast(ulong)this.times.countUntil!"a > b"(time) - 1;
+            uint lastCountedTime = this.times.countUntil!"a > b"(time) - 1;
             double dt = time - this.times[lastCountedTime];
             return integrator(this.timeAssociate[this.times[lastCountedTime]], dt);
         }

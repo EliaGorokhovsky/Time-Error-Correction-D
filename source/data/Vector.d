@@ -1,6 +1,7 @@
 module data.Vector;
 
 import std.conv;
+import std.math;
 import mir.ndslice;
 
 /**

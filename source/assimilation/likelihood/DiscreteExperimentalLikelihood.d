@@ -18,14 +18,14 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
     Integrator integrator;
     double minimumOffset; ///The most a true time can be less than the errant time; this is equal to the most an errant time can be more than the truth
     double maximumOffset; ///The most a true time can be more than the errant time; this is equal to the most an errant time can be less than the truth
-    ulong bins; ///The amount of bins into which to sort the time likelihood
+    uint bins; ///The amount of bins into which to sort the time likelihood
     int[] timeLikelihood;
 
     /**
      * Constructs a likelihood getter with information about the experiment, as well as a priori knowledge of time offset and desired number of bins for time offset likelihood
      * Also integrates ensemble timeseries to the maximum offset in order to have values for the interval from minimum to maximum offset
      */
-    this(Timeseries!Vector observations, Timeseries!Ensemble ensembles, Vector stateError, Integrator integrator, double minimumOffset, double maximumOffset, ulong bins) {
+    this(Timeseries!Vector observations, Timeseries!Ensemble ensembles, Vector stateError, Integrator integrator, double minimumOffset, double maximumOffset, uint bins) {
         super(observations, stateError);
         this.ensembles = ensembles;
         this.integrator = integrator;
