@@ -1,6 +1,8 @@
 module data.Timeseries;
 
 import std.algorithm;
+import data.Ensemble;
+import data.Vector;
 import integrators.Integrator;
 
 /**
@@ -23,6 +25,28 @@ class Timeseries(T) {
             association[this.times[i]] = this.members[i];
         }
         return association;
+    }
+
+    /**
+     * Returns a time increment, assuming difference between successive entries is constant
+     * This should be true in most cases for this experiment, but be careful when using it elsewhere
+     */
+    @property double dt() {
+        return this.times[1] - this.times[0];
+    }
+
+    /**
+     * If the timeseries contains ensembles, returns a timeseries of their means
+     */
+    static if(is(T == Ensemble)) {
+        @property Timeseries!Vector meanSeries() {
+            assert(this.members.length == this.times.length);
+            Timeseries!Vector means = new Timeseries!Vector();
+            foreach(i; 0..this.members.length) {
+                means.add(this.times[i], this.members[i].eMean);
+            }
+            return means;
+        }
     }
 
     /**
@@ -58,7 +82,7 @@ class Timeseries(T) {
             return this.timeAssociate[time]; 
         }
         else {
-            int lastCountedTime = this.times.countUntil!"a > b"(time) - 1;
+            ulong lastCountedTime = cast(ulong)this.times.countUntil!"a > b"(time) - 1;
             double dt = time - this.times[lastCountedTime];
             return integrator(this.timeAssociate[this.times[lastCountedTime]], dt);
         }

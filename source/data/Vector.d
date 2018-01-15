@@ -29,6 +29,13 @@ struct Vector {
     }
 
     /**
+     * Gets the magnitude of the vector or, if used as a point, distance from origin
+     */
+    @property double magnitude() {
+        return(sqrt(this.x.pow(2) + this.y.pow(2) + this.z.pow(2)));
+    }
+
+    /**
      * Handles vector addition and subtraction
      */
     Vector opBinary(string op)(Vector other) {
