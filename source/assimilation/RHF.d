@@ -7,7 +7,7 @@ import std.range;
 import std.stdio;
 import std.typecons;
 import assimilation.Assimilator;
-import assimilation.Likelihood;
+import assimilation.likelihood.Likelihood;
 import data.Ensemble;
 import data.Vector;
 import utility.ArrayStats;

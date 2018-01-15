@@ -5,7 +5,7 @@ import std.array;
 import std.math;
 import std.typecons;
 import assimilation.Assimilator;
-import assimilation.Likelihood;
+import assimilation.likelihood.Likelihood;
 import data.Ensemble;
 import data.Vector;
 import utility.ArrayStats;

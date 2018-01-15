@@ -58,7 +58,6 @@ class Timeseries(T) {
             return this.timeAssociate[time]; 
         }
         else {
-            import std.stdio;
             int lastCountedTime = this.times.countUntil!"a > b"(time) - 1;
             double dt = time - this.times[lastCountedTime];
             return integrator(this.timeAssociate[this.times[lastCountedTime]], dt);

@@ -1,4 +1,4 @@
-module assimilation.Likelihood;
+module assimilation.likelihood.Likelihood;
 
 import std.typecons;
 import data.Vector;

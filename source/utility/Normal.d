@@ -39,6 +39,6 @@ unittest {
 
     writeln("\nUNITTEST: Normal");
     writeln("Matplotlib returns normpdf:\n0,0,1 => 0.3989422804014327\n1,0,1 => 0.24197072451914337\n-1,1,2 => 0.12098536225957168");
-    writeln("normalVal returns normalVal:\n0,0,1 => ", normalVal(0, 0, 1), "\n1,0,1 => ", normalVal(1, 0, 1), "\n-1, 1, 2 => ", normalVal(-1, 1, 2));
+    writeln("normalVal returns normalVal:\n0,0,1 => ", normalVal(0, 0, 1), "\n1,0,1 => ", normalVal(1, 0, 1), "\n-1,1,2 => ", normalVal(-1, 1, 2));
 
 }

@@ -1,8 +1,7 @@
-module assimilation.LikelihoodGetter;
+module assimilation.likelihood.LikelihoodGetter;
 
 import std.algorithm;
-import std.typecons;
-import assimilation.Likelihood;
+import assimilation.likelihood.Likelihood;
 import data.Ensemble;
 import data.Timeseries;
 import data.Vector;
@@ -14,17 +13,14 @@ class LikelihoodGetter {
 
     Timeseries!Vector observations;
     Vector stateError;
-    double timeError;
 
-    this(Timeseries!Vector observations, Vector stateError, double timeError) {
+    this(Timeseries!Vector observations, Vector stateError) {
         this.observations = observations;
         this.stateError = stateError;
-        this.timeError = timeError;
     }
 
     /**
-     * Returns observation and likelihood for a given time
-     * Output for EAKF 
+     * Returns likelihood packaged with mean and deviation for a given time
      */
     Likelihood opCall(double time) {
         assert(this.observations.times.canFind(time));

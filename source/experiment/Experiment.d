@@ -4,8 +4,8 @@ import std.algorithm;
 import std.range;
 import std.typecons;
 import assimilation.Assimilator;
-import assimilation.Likelihood;
-import assimilation.LikelihoodGetter;
+import assimilation.likelihood.Likelihood;
+import assimilation.likelihood.LikelihoodGetter;
 import data.Ensemble;
 import data.Timeseries;
 import data.Vector;
@@ -116,7 +116,7 @@ unittest {
     process.setError(new GaussianError(Vector(0.1, 0.1, 0.1), process.truth, rk4));
     process.getObservations(0, 10, 3);
     writeln("Observing every 3 seconds with std (0.1, 0.1, 0.1) returns ", process.observations.members);
-    process.setLikelihood(new LikelihoodGetter(process.observations, Vector(0.1, 0.1, 0.1), 0));
+    process.setLikelihood(new LikelihoodGetter(process.observations, Vector(0.1, 0.1, 0.1)));
     process.getEnsembleTimeseries(0, 10, 1, 4, new Ensemble(Vector(0, 0, 0), 3, Vector(0.1, 0.1, 0.1)));
     writeln("RMSE is ", RMSE(process.ensembleSeries, process.truth));
 

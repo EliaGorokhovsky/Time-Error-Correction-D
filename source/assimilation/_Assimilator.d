@@ -1,6 +1,6 @@
 module assimilation.Assimilator;
 
-import assimilation.Likelihood;
+import assimilation.likelihood.Likelihood;
 import data.Ensemble;
 import data.Vector;
 
