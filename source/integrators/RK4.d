@@ -48,6 +48,19 @@ class RK4 : Integrator {
         return new Ensemble(ensemble.members.map!(a => this.integrate(a, dt)).array);
     }
 
+    /**
+     * Integrates a given point to a given time
+     * Avoid negative timeDifferences, which don't work as expected
+     */
+    override Vector integrateTo(Vector state, double timeDifference, uint steps) {
+        Vector newState = state;
+        double dt = timeDifference / steps;
+        foreach(i; 0..steps) {
+            newState = this.integrate(state, dt);
+        }
+        return newState;
+    }
+
 }
 
 unittest {

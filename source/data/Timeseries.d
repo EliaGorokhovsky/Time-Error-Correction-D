@@ -32,7 +32,7 @@ class Timeseries(T) {
      * This should be true in most cases for this experiment, but be careful when using it elsewhere
      */
     @property double dt() {
-        return this.times[1] - this.times[0];
+        return this.times.sort[1] - this.times.sort[0];
     }
 
     /**

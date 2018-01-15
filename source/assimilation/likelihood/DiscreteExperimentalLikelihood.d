@@ -2,6 +2,7 @@ module assimilation.likelihood.DiscreteExperimentalLikelihood;
 
 import std.algorithm;
 import std.array;
+import std.conv;
 import std.math;
 import std.parallelism;
 import std.range;
@@ -11,6 +12,7 @@ import data.Ensemble;
 import data.Timeseries;
 import data.Vector;
 import integrators.Integrator;
+import utility.Normal;
 
 class DiscreteExperimentalLikelihood : LikelihoodGetter {
 
@@ -41,12 +43,35 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
     }
 
     /**
-     * Returns likelihood packaged with discretely defined Gaussian likelihoods for a given time
+     * Returns likelihood packaged with discretely defined experimentally determined for a given time
      */
     override Likelihood opCall(double time) {
         assert(this.observations.times.canFind(time));
         Ensemble ensemble = ensembles.value(time, this.integrator);
-        return null;
+        int[] timeLikelihood = this.getTimeLikelihood(time);
+        Vector[] observationTrajectory = this.getObservationTrajectory(time);
+        assert(timeLikelihood.length == observationTrajectory.length, "timeLikelihood has " ~ timeLikelihood.length.to!string ~ " elements whereas observationTrajectory has " ~ observationTrajectory.length.to!string);
+        //Apply likelihoods
+        double[] xLikelihood;
+        xLikelihood[0..ensemble.size] = 0.0;
+        double[] yLikelihood;
+        yLikelihood[0..ensemble.size] = 0.0;
+        double[] zLikelihood;
+        zLikelihood[0..ensemble.size] = 0.0;
+        foreach(index, ref component; observationTrajectory.parallel) {
+            xLikelihood = xLikelihood.map!(a => a + timeLikelihood[index] * normalVal(a, component.x, this.stateError.x)).array;
+            yLikelihood = yLikelihood.map!(a => a + timeLikelihood[index] * normalVal(a, component.y, this.stateError.y)).array;
+            zLikelihood = zLikelihood.map!(a => a + timeLikelihood[index] * normalVal(a, component.z, this.stateError.z)).array;
+        }
+        immutable double xSum = xLikelihood.sum;
+        immutable double ySum = yLikelihood.sum;
+        immutable double zSum = zLikelihood.sum;
+        foreach(index, ref component; timeLikelihood.parallel) {
+            xLikelihood[index] /= xSum;
+            yLikelihood[index] /= ySum;
+            zLikelihood[index] /= zSum;
+        }
+        return new Likelihood(xLikelihood, yLikelihood, zLikelihood);
     }
 
     /**
@@ -83,6 +108,25 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
             component /= sum;
         }
         return normalizedLikelihood;
+    }
+
+    /**
+     * Gets baselines for each bin to find likelihood for a given observation 
+     * TODO: don't integrate backwards
+     */
+    Vector[] getObservationTrajectory(double time) {
+        assert(this.observations.times.canFind(time));
+        Vector obs = this.observations.value(time);
+        Vector[] baselines;
+        const double binWidth = (this.maximumOffset - this.minimumOffset) / this.bins;
+        Vector binEdge = this.integrator.integrateTo(obs, this.minimumOffset, 10 * cast(uint)abs(this.minimumOffset) / this.bins);
+        Vector state = this.integrator.integrate(binEdge, binWidth / 2);
+        baselines ~= state;
+        foreach(i; 0..this.bins - 1) {
+            state = this.integrator.integrate(binEdge, binWidth);
+            baselines ~= state;
+        }
+        return baselines;
     }
 
 }

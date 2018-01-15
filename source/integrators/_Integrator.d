@@ -22,5 +22,6 @@ abstract class Integrator {
 
     Vector integrate(Vector state, double dt);
     Ensemble integrateEnsemble(Ensemble ensemble, double dt);
+    Vector integrateTo(Vector state, double timeDifference, uint steps);
 
 }
