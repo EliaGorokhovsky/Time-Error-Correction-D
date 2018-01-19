@@ -1,4 +1,5 @@
 import std.conv;
+import std.file;
 import std.stdio;
 import assimilation.Assimilator;
 import assimilation.EAKF;
@@ -45,7 +46,8 @@ void main() {
 	const double maximumOffset = 0.2; ///The last time that is a valid time for observation relative to reported time
 	const uint bins = 10; ///The amount of different time intervals tested in experimental likelihood algorithm
 	//Experimental constants
-	const string filename = "../data/testdata.csv"; ///The name of the file to write to
+	const string filename = "data/testdata.csv"; ///The name of the file to write to
+	File file = File(filename, "a"); ///The file to be written to
 
 	writeln("Control:");
 	Experiment control = new Experiment(integrator, controlAssimilator);
@@ -53,7 +55,7 @@ void main() {
 	control.setError(new GaussianTimeError(timeError, actualError, control.truth, integrator));
 	control.getObservations(obsStartTime, obsEndTime, observationInterval);
 	control.setLikelihood(new LikelihoodGetter(control.observations, expectedError));
-	control.getEnsembleTimeseries(
+	control.getEnsembleTimeseries!false(
 		ensembleStartTime, ensembleEndTime, ensembledt, spinup, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation)
 	);
 	immutable double controlRMSE = RMSE(control.ensembleSeries, control.truth);
@@ -65,13 +67,13 @@ void main() {
 	treatment.getObservations(obsStartTime, obsEndTime, observationInterval);
 	treatment.setLikelihood(
 		new DiscreteExperimentalLikelihood(
-			treatment.observations, treatment.ensembleSeries, expectedError, integrator, minimumOffset, maximumOffset, bins
+			treatment.observations, expectedError, integrator, minimumOffset, maximumOffset, bins
 		)
 	);
-	treatment.getEnsembleTimeseries(
+	treatment.getEnsembleTimeseries!true(
 		ensembleStartTime, ensembleEndTime, ensembledt, spinup, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation)
 	);
 	immutable double treatmentRMSE = RMSE(treatment.ensembleSeries, treatment.truth);
 	writeln("Treatment RMSE is ", treatmentRMSE);
-	write(filename, controlRMSE.to!string ~ ", " ~ treatmentRMSE.to!string);
+	file.writeln(controlRMSE.to!string ~ ", " ~ treatmentRMSE.to!string);
 }

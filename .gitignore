@@ -12,3 +12,4 @@ time-error-correction-d-test-*
 *.o
 *.obj
 *.lst
+*.csv

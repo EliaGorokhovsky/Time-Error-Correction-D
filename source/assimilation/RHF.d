@@ -82,13 +82,13 @@ class RHF : Assimilator {
         //Sort ensemble values and associate them with likelihood
         //I've left a bunch of commented writeln statements here for debugging; will remove later
         assert(likelihood.length == priorValues.length);
-        ulong[] indexList;
+        uint[] indexList;
         foreach(i; 0..priorValues.length) {
-            indexList ~= i;
+            indexList ~= cast(uint)i;
         }
-        Tuple!(double[], ulong[]) sortedLists = indexSort!(double, ulong)(priorValues, indexList);
+        Tuple!(double[], uint[]) sortedLists = indexSort!(double, uint)(priorValues, indexList);
         double[] sortedPrior = sortedLists[0];
-        ulong[] indices = sortedLists[1];
+        uint[] indices = sortedLists[1];
         //Assign a probability density to each bin
         double[] likelihoodDensity;
         foreach(i; 0..(sortedPrior.length - 1)) {

@@ -11,7 +11,7 @@ import utility.ArrayStats;
  */
 double regressionSlope(double[] x, double[] y) {
     assert(x.length == y.length);
-    const ulong n = x.length;
+    const uint n = cast(uint)x.length;
     double[] xy;
     foreach (i; 0..n) {
         xy ~= x[i] * y[i];

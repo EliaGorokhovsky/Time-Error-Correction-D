@@ -28,6 +28,13 @@ class Timeseries(T) {
     }
 
     /**
+     * Gets the amount of members in the timeseries
+     */
+    @property ulong length() {
+        return this.members.length;
+    }
+
+    /**
      * Returns a time increment, assuming difference between successive entries is constant
      * This should be true in most cases for this experiment, but be careful when using it elsewhere
      */
@@ -83,9 +90,16 @@ class Timeseries(T) {
         }
         else {
             long lastCountedTime = this.times.countUntil!"a > b"(time) - 1;
-            double dt = time - this.times[lastCountedTime];
-            return integrator(this.timeAssociate[this.times[lastCountedTime]], dt);
+            double dt = time - this.times[cast(uint)lastCountedTime];
+            return integrator(this.timeAssociate[this.times[cast(uint)lastCountedTime]], dt);
         }
+    }
+
+    /**
+     * Gets the nth value of the timeseries
+     */
+    T value(uint index) {
+        return this.members[index];
     }
 
 }

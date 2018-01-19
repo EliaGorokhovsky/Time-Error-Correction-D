@@ -16,7 +16,6 @@ import utility.Normal;
 
 class DiscreteExperimentalLikelihood : LikelihoodGetter {
 
-    Timeseries!Ensemble ensembles;
     Integrator integrator;
     double minimumOffset; ///The most a true time can be less than the errant time; this is equal to the most an errant time can be more than the truth
     double maximumOffset; ///The most a true time can be more than the errant time; this is equal to the most an errant time can be less than the truth
@@ -27,37 +26,38 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
      * Constructs a likelihood getter with information about the experiment, as well as a priori knowledge of time offset and desired number of bins for time offset likelihood
      * Also integrates ensemble timeseries to the maximum offset in order to have values for the interval from minimum to maximum offset
      */
-    this(Timeseries!Vector observations, Timeseries!Ensemble ensembles, Vector stateError, Integrator integrator, double minimumOffset, double maximumOffset, uint bins) {
+    this(Timeseries!Vector observations, Vector stateError, Integrator integrator, double minimumOffset, double maximumOffset, uint bins) {
         super(observations, stateError);
-        this.ensembles = ensembles;
         this.integrator = integrator;
         this.minimumOffset = minimumOffset;
         this.maximumOffset = maximumOffset;
         this.bins = bins;
-        this.timeLikelihood[0..bins] = 0;
-        Ensemble ensemble = this.ensembles.members[$];
-        foreach(i; iota(this.ensembles.times[$], this.ensembles.times[$] + maximumOffset, this.ensembles.dt)) {
-            ensemble = this.integrator(ensemble, this.ensembles.dt);
-            this.ensembles.add(i + this.ensembles.dt, ensemble);
+        foreach(i; 0..bins) {
+            this.timeLikelihood ~= 0;
         }
     }
 
     /**
      * Returns likelihood packaged with discretely defined experimentally determined for a given time
      */
-    override Likelihood opCall(double time) {
+    override Likelihood opCall(double time, Timeseries!Ensemble ensembles) {
+        Ensemble ensemble = ensembles.value(ensembles.length - 1);
+        foreach(i; iota(ensembles.times[$ - 1], ensembles.times[$ - 1] + maximumOffset, ensembles.dt)) {
+            ensemble = this.integrator(ensemble, ensembles.dt);
+            ensembles.add(i + ensembles.dt, ensemble);
+        }
         assert(this.observations.times.canFind(time));
-        Ensemble ensemble = ensembles.value(time, this.integrator);
-        int[] timeLikelihood = this.getTimeLikelihood(time);
+        ensemble = ensembles.value(time, this.integrator);
+        int[] timeLikelihood = this.getTimeLikelihood(time, ensembles);
         Vector[] observationTrajectory = this.getObservationTrajectory(time);
         assert(timeLikelihood.length == observationTrajectory.length, "timeLikelihood has " ~ timeLikelihood.length.to!string ~ " elements whereas observationTrajectory has " ~ observationTrajectory.length.to!string);
         //Apply likelihoods
         double[] xLikelihood;
-        xLikelihood[0..ensemble.size] = 0.0;
+        xLikelihood[0..cast(uint)ensemble.size] = 0.0;
         double[] yLikelihood;
-        yLikelihood[0..ensemble.size] = 0.0;
+        yLikelihood[0..cast(uint)ensemble.size] = 0.0;
         double[] zLikelihood;
-        zLikelihood[0..ensemble.size] = 0.0;
+        zLikelihood[0..cast(uint)ensemble.size] = 0.0;
         foreach(index, ref component; observationTrajectory.parallel) {
             xLikelihood = xLikelihood.map!(a => a + timeLikelihood[index] * normalVal(a, component.x, this.stateError.x)).array;
             yLikelihood = yLikelihood.map!(a => a + timeLikelihood[index] * normalVal(a, component.y, this.stateError.y)).array;
@@ -77,12 +77,12 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
     /**
      * At a certain time, determines discretely defined likelihood in time
      */
-    int[] getTimeLikelihood(double time) {
+    int[] getTimeLikelihood(double time, Timeseries!Ensemble ensembles) {
         assert(this.observations.times.canFind(time));
         Vector obs = this.observations.value(time);
         const double binWidth = (this.maximumOffset - this.minimumOffset) / this.bins;
         double[] binMiddles = iota(this.minimumOffset + binWidth / 2, this.maximumOffset, binWidth).array;
-        Vector[] binValues = binMiddles.map!(a => this.ensembles.meanSeries.value(a)).array;
+        Vector[] binValues = binMiddles.map!(a => ensembles.meanSeries.value(a)).array;
         int[] binQuantities; 
         binQuantities[0..this.bins] = 0;
         Vector distance;
@@ -101,8 +101,8 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
     /**
      * Performs getTimeLikelihood, but returns time likelihood normalized to a discrete PDF
      */
-    double[] getNormalizedTimeLikelihood(double time) {
-        double[] normalizedLikelihood = cast(double[])this.getTimeLikelihood(time);
+    double[] getNormalizedTimeLikelihood(double time, Timeseries!Ensemble ensembles) {
+        double[] normalizedLikelihood = cast(double[])this.getTimeLikelihood(time, ensembles);
         immutable double sum = normalizedLikelihood.sum;
         foreach(ref component; normalizedLikelihood.parallel) {
             component /= sum;

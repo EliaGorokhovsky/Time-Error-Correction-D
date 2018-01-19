@@ -80,12 +80,12 @@ class Experiment {
      * Runs an ensemble over an interval
      * Spin-up time: no assimilation
      */
-    Timeseries!Ensemble getEnsembleTimeseries(double startTime, double endTime, double dt, double spinup, Ensemble ensemble) {
+    Timeseries!Ensemble getEnsembleTimeseries(bool experiment)(double startTime, double endTime, double dt, double spinup, Ensemble ensemble) {
         Timeseries!Ensemble ensembleSeries = new Timeseries!Ensemble();
         ensembleSeries.add(0, ensemble);
         foreach(i; iota(startTime, endTime, dt)) {
             if(this.observations.times.canFind(i) && i >= spinup) {
-                this.assimilator.setLikelihood(this.likelihoodGetter(i));
+                this.assimilator.setLikelihood(experiment? this.likelihoodGetter(i, ensembleSeries) : this.likelihoodGetter(i));
                 ensemble = this.assimilator(ensemble);
             }
             ensemble = this.integrator(ensemble, dt);

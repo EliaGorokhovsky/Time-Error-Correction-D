@@ -27,4 +27,11 @@ class LikelihoodGetter {
         return new Likelihood(this.observations.timeAssociate[time], this.stateError);
     }
 
+    /**
+     * Returns likelihood given ensembles
+     */
+    Likelihood opCall(double time, Timeseries!Ensemble ensembles) {
+        return null;
+    }
+
 }
