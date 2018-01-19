@@ -104,7 +104,7 @@ class Ensemble {
     /** 
      * Gets the size of the ensemble
      */
-    @property int size() {
+    @property ulong size() {
         return this.members.length;
     }
 

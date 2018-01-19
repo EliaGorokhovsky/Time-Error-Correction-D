@@ -82,7 +82,7 @@ class Timeseries(T) {
             return this.timeAssociate[time]; 
         }
         else {
-            uint lastCountedTime = this.times.countUntil!"a > b"(time) - 1;
+            long lastCountedTime = this.times.countUntil!"a > b"(time) - 1;
             double dt = time - this.times[lastCountedTime];
             return integrator(this.timeAssociate[this.times[lastCountedTime]], dt);
         }

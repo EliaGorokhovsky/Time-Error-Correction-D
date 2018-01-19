@@ -11,19 +11,19 @@ import utility.ArrayStats;
  */
 double regressionSlope(double[] x, double[] y) {
     assert(x.length == y.length);
-    int n = x.length;
+    const ulong n = x.length;
     double[] xy;
     foreach (i; 0..n) {
         xy ~= x[i] * y[i];
     }
-    double[] xSquared = x.map!(a => a * a).array;
-    double[] ySquared = y.map!(a => a * a).array;
-    double xDenom = n * xSquared.sum - x.sum * x.sum;
-    double yDenom = n * ySquared.sum - y.sum * y.sum;
+    const double[] xSquared = x.map!(a => a * a).array;
+    const double[] ySquared = y.map!(a => a * a).array;
+    const double xDenom = n * xSquared.sum - x.sum * x.sum;
+    const double yDenom = n * ySquared.sum - y.sum * y.sum;
     if (xDenom == 0 || yDenom == 0) {
         return 1;
     }
-    double r = (n * xy.sum - x.sum * y.sum) / sqrt(xDenom * yDenom);
+    const double r = (n * xy.sum - x.sum * y.sum) / sqrt(xDenom * yDenom);
     return r * standardDeviation(y) / standardDeviation(x);
 }
 
