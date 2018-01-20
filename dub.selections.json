@@ -6,7 +6,7 @@
 		"matplotlib-d": "0.1.4",
 		"mir-algorithm": "0.7.0",
 		"mir-linux-kernel": "1.0.0",
-		"mir-random": "0.3.1",
+		"mir-random": "0.3.2",
 		"pyd": "0.9.9"
 	}
 }

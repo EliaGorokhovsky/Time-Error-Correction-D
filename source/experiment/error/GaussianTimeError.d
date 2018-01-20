@@ -1,5 +1,6 @@
 module experiment.error.GaussianTimeError;
 
+import std.math;
 import mir.random;
 import mir.random.variable;
 import data.Timeseries;
@@ -16,20 +17,23 @@ class GaussianTimeError : ErrorGenerator {
     double timeError;
     Integrator integrator;
     Timeseries!Vector truth;
+    double firstTime;
 
     this(double timeError, Vector error, Timeseries!Vector truth, Integrator integrator) {
+        this.timeError = timeError;
         this.error = error;
         this.truth = truth;
         this.integrator = integrator;
+        this.firstTime = truth.times[0];
     }
 
     /**
-     * Gets a point observation at a given time by firt getting a time from a normal distribution and then a position
+     * Gets a point observation at a given time by first getting a time from a normal distribution and then a position
      */
     override Vector generate(double time) {
         auto gen = Random(unpredictableSeed);
         auto newTime = NormalVariable!double(time, this.timeError);
-        Vector base = this.truth.value(newTime(gen), this.integrator);
+        Vector base = this.truth.value(this.firstTime + abs(newTime(gen) - this.firstTime), this.integrator);
         auto normalX = NormalVariable!double(base.x, this.error.x);
         auto normalY = NormalVariable!double(base.y, this.error.y);
         auto normalZ = NormalVariable!double(base.z, this.error.z);
