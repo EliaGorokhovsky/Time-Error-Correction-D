@@ -82,16 +82,25 @@ class Experiment {
      */
     Timeseries!Ensemble getEnsembleTimeseries(bool experiment)(double startTime, double endTime, double dt, double spinup, Ensemble ensemble) {
         Timeseries!Ensemble ensembleSeries = new Timeseries!Ensemble();
+        import std.stdio;
         ensembleSeries.add(0, ensemble);
+        assert(ensembleSeries.members !is null, "Ensemble series is null");
+        writeln("Ensemble Series Leggrtjb b4: ", ensembleSeries.length);
+        writeln("Statr ", startTime, "Efbh ", endTime, " dt ", dt);
         foreach(i; iota(startTime, endTime, dt)) {
             if(this.observations.times.canFind(i) && i >= spinup) {
+                Timeseries!Ensemble placeholder = new Timeseries!Ensemble(ensembleSeries.members, ensembleSeries.times);
                 this.assimilator.setLikelihood(experiment? this.likelihoodGetter(i, ensembleSeries) : this.likelihoodGetter(i));
+                ensembleSeries = new Timeseries!Ensemble(placeholder.members, placeholder.times);
+                //writeln("Length after assimilation at time ", i, ": ", ensembleSeries.length);
                 ensemble = this.assimilator(ensemble);
             }
             ensemble = this.integrator(ensemble, dt);
             ensembleSeries.add(i + dt, ensemble);
+            //writeln("Length at time ", i, ": ", ensembleSeries.length);
         }
         this.ensembleSeries = ensembleSeries;
+        writeln("Ensemble Series Leggrtjb: ", this.ensembleSeries.length);
         return this.ensembleSeries;
     }
 
@@ -117,7 +126,7 @@ unittest {
     process.getObservations(0, 10, 3);
     writeln("Observing every 3 seconds with std (0.1, 0.1, 0.1) returns ", process.observations.members);
     process.setLikelihood(new LikelihoodGetter(process.observations, Vector(0.1, 0.1, 0.1)));
-    process.getEnsembleTimeseries(0, 10, 1, 4, new Ensemble(Vector(0, 0, 0), 3, Vector(0.1, 0.1, 0.1)));
+    process.getEnsembleTimeseries!false(0, 10, 1, 4, new Ensemble(Vector(0, 0, 0), 3, Vector(0.1, 0.1, 0.1)));
     writeln("RMSE is ", RMSE(process.ensembleSeries, process.truth));
 
 }

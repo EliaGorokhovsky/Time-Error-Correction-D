@@ -8,7 +8,9 @@ import std.mathspecial;
  */
 double weightedNormInverse(double alpha, double mean, double standardDeviation, double p) {
     double np = p / alpha;
+    assert((1 - np) * (-np) < 0, "np is outside of bound");
     double x = normalDistributionInverse(np);
+    assert(!isNaN(cast(float)x), "Normal(13): x is NaN");
     x = mean + x * standardDeviation;
     return x;
 }

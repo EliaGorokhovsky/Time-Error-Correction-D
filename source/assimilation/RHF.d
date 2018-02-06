@@ -32,6 +32,7 @@ class RHF : Assimilator {
         this.yLikelihood = likelihood.yLikelihood;
         this.zLikelihood = likelihood.zLikelihood;
         this.rectangularQuadrature = rectangularQuadrature;
+
     }
 
     this() {
@@ -92,7 +93,7 @@ class RHF : Assimilator {
         //Assign a probability density to each bin
         double[] likelihoodDensity;
         foreach(i; 0..(sortedPrior.length - 1)) {
-            likelihoodDensity ~= (likelihood[indices[i+1]] + likelihood[indices[i]]) / 2;
+            likelihoodDensity ~= (likelihood[indices[i + 1]] + likelihood[indices[i]]) / 2;
         }
         //Compute partial Gaussian kernels for tails of prior
         immutable double distanceForUnitSpread = -1 * weightedNormInverse(1, 0, 1, 1.0 / (priorValues.length + 1));
@@ -115,6 +116,7 @@ class RHF : Assimilator {
             height ~= sortedPrior[i + 1] == sortedPrior[i] ? -1 : 1 / ((sortedPrior.length + 1) * (sortedPrior[i + 1] - sortedPrior[i]));
         }
         double massSum = mass.sum;
+        if(massSum == 0) mass[] = 1 / mass.length;
         mass = mass.map!(a => a / massSum).array;
         //Get weight for normalized partial Gaussian tails
         double leftAmp = leftProductWeight / massSum;
@@ -138,25 +140,30 @@ class RHF : Assimilator {
             double passedMass = (i + 1.0) / (sortedPrior.length + 1);
             if(passedMass < cumulativeMass[1]) {
                 posteriorPoints ~= weightedNormInverse(leftAmp, leftMean, leftStandardDeviation, passedMass);
+                assert(!isNaN(cast(float)weightedNormInverse(leftAmp, leftMean, leftStandardDeviation, passedMass)), "RHF(149): Weighted Norm Inverse is NaN");
                 found = true;
             } else if(passedMass > cumulativeMass[$ - 2]) {
                 posteriorPoints ~= 2 * rightMean - weightedNormInverse(rightAmp, rightMean, rightStandardDeviation, 1 - passedMass);
+                assert(rightAmp != 0, "Right alpha is 0");
+                assert(!isNaN(cast(float)(2 * rightMean - weightedNormInverse(rightAmp, rightMean, rightStandardDeviation, 1 - passedMass))), "RHF(153): Weighted Norm Inverse is NaN");
                 found = true;
             } else {
                 foreach(cumulativeMassIndex; 2..cumulativeMass.length) {
                     if(passedMass >= cumulativeMass[cumulativeMassIndex - 1] && passedMass <= cumulativeMass[cumulativeMassIndex] && !found) {
-                        if(this.rectangularQuadrature) {
+                        if(this.rectangularQuadrature 
+                            || (height[cumulativeMassIndex - 2] * likelihood[indices[cumulativeMassIndex - 2]])
+                            .approxEqual(height[cumulativeMassIndex - 2] * likelihood[indices[cumulativeMassIndex - 1]])) {
                             posteriorPoints ~= sortedPrior[cumulativeMassIndex - 2] + (passedMass - cumulativeMass[cumulativeMassIndex - 1]) / (cumulativeMass[cumulativeMassIndex] - cumulativeMass[cumulativeMassIndex - 1]) * (sortedPrior[cumulativeMassIndex - 1] - sortedPrior[cumulativeMassIndex - 2]);
                             found = true;
                         } else {
                             //We're using trapezoidal quadrature to get the new point. 
                             //box is index of cumulative mass, box - 1 is ensemble point
-                            double leftHeight = height[cumulativeMassIndex - 2] * likelihood[indices[cumulativeMassIndex - 2]];
-                            double rightHeight = height[cumulativeMassIndex - 2] * likelihood[indices[cumulativeMassIndex - 1]];
+                            double leftHeight = height[cumulativeMassIndex - 2] * likelihood[indices[cumulativeMassIndex - 2]] / massSum;
+                            double rightHeight = height[cumulativeMassIndex - 2] * likelihood[indices[cumulativeMassIndex - 1]] / massSum;
                             //Solve a quadratic to get its roots. Quadratic is the integral of the line that forms the top of a trapezoidal bin
                             double a = 0.5 * (rightHeight - leftHeight) / (sortedPrior[cumulativeMassIndex - 1] - sortedPrior[cumulativeMassIndex - 2]);
                             double b = leftHeight;
-                            double c = cumulativeMass[cumulativeMassIndex] - passedMass;
+                            double c = cumulativeMass[cumulativeMassIndex - 1] - passedMass;
                             Tuple!(double, double) roots = solveQuadratic(a, b, c);
                             double root1 = roots[0];
                             double root2 = roots[1];
@@ -169,26 +176,36 @@ class RHF : Assimilator {
                                 posteriorPoints ~= root2;
                                 found = true;
                             } else {
-                                //writeln("left height: ", leftHeight, " right height: ", rightHeight);
-                                //writeln("a: ", a, " b: ", b, " c: ", c);
-                                //writeln("root1: ", root1, " root2: ", root2);
-                                //writeln("ensemble point index: ", cumulativeMassIndex - 2);
-                                //writeln("Cumulative mass lower point: ", cumulativeMass[cumulativeMassIndex - 1], " cumulative mass higher point: ", cumulativeMass[cumulativeMassIndex]);
-                                //writeln("Passed mass: ", passedMass);
-                                assert(0);
+                                writeln("Lower x value: ", sortedPrior[cumulativeMassIndex - 2], " upper x value: ", sortedPrior[cumulativeMassIndex - 1], " upper x value 2: ", sortedPrior[cumulativeMassIndex]);
+                                writeln("left height: ", leftHeight, " right height: ", rightHeight);
+                                writeln("a: ", a, " b: ", b, " c: ", c);
+                                writeln("root1: ", root1, " root2: ", root2);
+                                writeln("ensemble point index: ", cumulativeMassIndex - 2);
+                                writeln("Cumulative mass lower point: ", cumulativeMass[cumulativeMassIndex - 1], " cumulative mass higher point: ", cumulativeMass[cumulativeMassIndex]);
+                                writeln("Passed mass: ", passedMass);
+                                assert(0, "Failed to get proper roots for trapezoidal quadrature.");
                             }
                         }
-                    }
+                    } 
+                    /*else {
+                        import std.stdio;
+                        writeln(passedMass);
+                        writeln(cumulativeMass[cumulativeMassIndex - 1], " ", cumulativeMass[cumulativeMassIndex]);
+                        assert(0, "");
+                    }*/
                 }
             }
         }
         //writeln("Prior values: ", priorValues);
         //writeln("Posterior points: ", posteriorPoints);
         double[] observationIncrements;
+        assert(posteriorPoints.filter!(a => isNaN(cast(float) a)).array.length == 0, "RHF(205): NaN in posteriorPoints");
         foreach(i; 0..sortedPrior.length) {
             observationIncrements ~= 0;
         }
         foreach(i; 0..sortedPrior.length) {
+            assert(indices[i] < observationIncrements.length);
+            assert(posteriorPoints.length == sortedPrior.length);
             observationIncrements[indices[i]] = posteriorPoints[i] - sortedPrior[i];
         }
         return cast(double[])observationIncrements;

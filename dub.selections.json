@@ -1,7 +1,7 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"dstats": "1.0.3",
+		"dstats": "1.0.5",
 		"matplotd": "0.0.1",
 		"matplotlib-d": "0.1.4",
 		"mir-algorithm": "0.7.0",

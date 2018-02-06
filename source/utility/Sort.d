@@ -1,41 +1,26 @@
 module utility.Sort;
 
 import std.algorithm;
+import std.array;
+import std.math;
 import std.typecons;
-
-/**
- * A struct to hold a key and a value for use in non-uniquely keyed associative arrays
- */
-struct keyedValue(T, U) {
-
-    T key;
-    U value;
-
-    int opCmp(ref const keyedValue s) const {  
-        return cast(int)(this.key - s.key);
-    }
-
-    bool opEquals(const keyedValue s) {
-        return this.key == s.key;
-    }
-
-}
 
 /**
  * Sort a list by another's values
  */
 Tuple!(T[], U[]) indexSort(T, U)(T[] keyList, U[] valueList) {
     assert(keyList.length == valueList.length);
-    keyedValue!(T, U)[] combinedList;
+    Tuple!(T, U)[] combinedList;
     foreach(i; 0..keyList.length) {
-        combinedList ~= keyedValue!(T, U)(keyList[i], valueList[i]);
+        combinedList ~= Tuple!(T, U)(keyList[i], valueList[i]);
     }
-    combinedList.sort();
+    assert(combinedList.filter!(a => isNaN(cast(float) a[0])).array.length == 0, "Sort(36): NaN in list");
+    combinedList = combinedList.sort!((a, b) => a[0] < b[0])().array;
     T[] sortedKeyList;
     U[] sortedValueList;
     foreach(i; 0..keyList.length) {
-        sortedKeyList ~= combinedList[i].key;
-        sortedValueList ~= combinedList[i].value;
+        sortedKeyList ~= combinedList[i][0];
+        sortedValueList ~= combinedList[i][1];
     }
     return tuple(sortedKeyList, sortedValueList);
 }

@@ -1,5 +1,6 @@
 module experiment.Analytics;
 
+import std.stdio;
 import std.math;
 import data.Ensemble;
 import data.Timeseries;
@@ -11,7 +12,8 @@ import data.Vector;
  * RMSE is the square root of the mean of the squares deviations of the ensemble means
  */
 double RMSE(Timeseries!Ensemble data, Timeseries!Vector truth) {
-    assert(data.members.length == truth.members.length);
+    if(data.members.length != truth.members.length) writeln("Data length: ", data.members.length, " Truth length: ", truth.members.length);
+    assert(data.members.length == truth.members.length, "Unequal dataset lengths");
     double sumOfSquares = 0;
     foreach(i; 0..truth.members.length) {
         sumOfSquares += (truth.members[i].x - data.members[i].eMean.x).pow(2) + (truth.members[i].y - data.members[i].eMean.y).pow(2) + (truth.members[i].z - data.members[i].eMean.z).pow(2);
