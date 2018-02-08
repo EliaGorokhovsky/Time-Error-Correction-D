@@ -169,10 +169,12 @@ class RHF : Assimilator {
                             double root2 = roots[1];
                             root1 += sortedPrior[cumulativeMassIndex - 2];
                             root2 += sortedPrior[cumulativeMassIndex - 2];
-                            if(root1 >= sortedPrior[cumulativeMassIndex - 2] && root1 <= sortedPrior[cumulativeMassIndex - 1]) {
+                            if(root1 >= sortedPrior[cumulativeMassIndex - 2] && root1 <= sortedPrior[cumulativeMassIndex - 1] ||
+                            root1.approxEqual(sortedPrior[cumulativeMassIndex - 2]) || root1.approxEqual(sortedPrior[cumulativeMassIndex - 1])) {
                                 posteriorPoints ~= root1;
                                 found = true;
-                            } else if(root2 >= sortedPrior[cumulativeMassIndex - 1] && root2 <= sortedPrior[cumulativeMassIndex]) {
+                            } else if(root2 >= sortedPrior[cumulativeMassIndex - 1] && root2 <= sortedPrior[cumulativeMassIndex] || 
+                            root1.approxEqual(sortedPrior[cumulativeMassIndex - 1]) || root1.approxEqual(sortedPrior[cumulativeMassIndex])) {
                                 posteriorPoints ~= root2;
                                 found = true;
                             } else {

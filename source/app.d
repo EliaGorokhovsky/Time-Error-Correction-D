@@ -18,7 +18,7 @@ import integrators.RK4;
 import systems.System;
 import systems.Lorenz63;
 
-void main() {
+void run() {
 	//Declare experiment parameters
 	//Universal
 	Vector startState = Vector(1, 1, 1); ///The initial point of the truth
@@ -51,7 +51,7 @@ void main() {
 	const string filename = "data/testdata.csv"; ///The name of the file to write to
 	File file = File(filename, "a"); ///The file to be written to
 
-	/*writeln("Control:");
+	writeln("Control:");
 	Experiment control = new Experiment(integrator, controlAssimilator);
 	control.getTruth(startState, startTime, endTime, dt);
 	control.setError(new GaussianTimeError(timeError, actualError, control.truth, integrator));
@@ -61,7 +61,7 @@ void main() {
 		ensembleStartTime, ensembleEndTime, ensembledt, spinup, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation)
 	);
 	immutable double controlRMSE = RMSE(control.ensembleSeries, control.truth);
-	writeln("Control RMSE is ", controlRMSE);*/
+	writeln("Control RMSE is ", controlRMSE);
 	writeln("Experiment:");
 	Experiment treatment = new Experiment(integrator, experimentalAssimilator);
 	treatment.getTruth(startState, startTime, endTime, dt);
@@ -77,5 +77,11 @@ void main() {
 	);
 	immutable double treatmentRMSE = RMSE(treatment.ensembleSeries, treatment.truth);
 	writeln("Treatment RMSE is ", treatmentRMSE);
-	//file.writeln(controlRMSE.to!string ~ ", " ~ treatmentRMSE.to!string);
+	file.writeln(controlRMSE.to!string ~ ", " ~ treatmentRMSE.to!string);
+}
+
+void main() {
+	foreach(i; 0..200) {
+		run();
+	}
 }

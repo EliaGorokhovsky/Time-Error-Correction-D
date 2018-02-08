@@ -82,11 +82,11 @@ class Experiment {
      */
     Timeseries!Ensemble getEnsembleTimeseries(bool experiment)(double startTime, double endTime, double dt, double spinup, Ensemble ensemble) {
         Timeseries!Ensemble ensembleSeries = new Timeseries!Ensemble();
-        import std.stdio;
+        //import std.stdio;
         ensembleSeries.add(0, ensemble);
         assert(ensembleSeries.members !is null, "Ensemble series is null");
-        writeln("Ensemble Series Leggrtjb b4: ", ensembleSeries.length);
-        writeln("Statr ", startTime, "Efbh ", endTime, " dt ", dt);
+        //writeln("Ensemble Series Leggrtjb b4: ", ensembleSeries.length);
+        //writeln("Statr ", startTime, "Efbh ", endTime, " dt ", dt);
         foreach(i; iota(startTime, endTime, dt)) {
             if(this.observations.times.canFind(i) && i >= spinup) {
                 Timeseries!Ensemble placeholder = new Timeseries!Ensemble(ensembleSeries.members, ensembleSeries.times);
@@ -100,7 +100,7 @@ class Experiment {
             //writeln("Length at time ", i, ": ", ensembleSeries.length);
         }
         this.ensembleSeries = ensembleSeries;
-        writeln("Ensemble Series Leggrtjb: ", this.ensembleSeries.length);
+        //writeln("Ensemble Series Leggrtjb: ", this.ensembleSeries.length);
         return this.ensembleSeries;
     }
 
