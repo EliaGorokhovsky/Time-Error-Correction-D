@@ -122,7 +122,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
             distance = binValues[i] - obs;
             //writeln("Distance: ", binValues[i], " - ", obs, " = ", distance);
             //writeln("State error: ", this.stateError);
-            if(abs(distance.x) < 50 * this.stateError.x && abs(distance.y) < 50 * this.stateError.y && abs(distance.z) < 50 * this.stateError.z) {
+            if(abs(distance.x) < 2 * this.stateError.x && abs(distance.y) < 2 * this.stateError.y && abs(distance.z) < 2 * this.stateError.z) {
                 binQuantities[i] += 1;
             }
         }

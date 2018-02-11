@@ -55,7 +55,7 @@ class Ensemble {
      * Gets an array of all of the z-values of the points of the ensemble
      */
     @property double[] zValues() {
-        return members.map!(a => a.y).array;
+        return members.map!(a => a.z).array;
     }
 
     /**

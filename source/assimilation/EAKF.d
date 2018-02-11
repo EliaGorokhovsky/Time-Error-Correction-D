@@ -3,6 +3,7 @@ module assimilation.EAKF;
 import std.algorithm;
 import std.array;
 import std.math;
+import std.stdio;
 import std.typecons;
 import assimilation.Assimilator;
 import assimilation.likelihood.Likelihood;
@@ -54,19 +55,19 @@ class EAKF : Assimilator {
         double zSlope = regressionSlope(output.xValues, output.zValues);
         double[] obsIncrements = this.getObservationIncrements(output.xValues, posteriorMean.x, posteriorSpread.x);
         foreach(i; 0..obsIncrements.length) { output.members[i].x = output.members[i].x + obsIncrements[i]; } //Regression of a variable onto itself returns 1
-        foreach(i; 0..obsIncrements.length) { output.members[i].y = output.members[i].y + ySlope * obsIncrements[i]; }
-        foreach(i; 0..obsIncrements.length) { output.members[i].z = output.members[i].z + zSlope * obsIncrements[i]; }
+        //foreach(i; 0..obsIncrements.length) { output.members[i].y = output.members[i].y + ySlope * obsIncrements[i]; }
+        //foreach(i; 0..obsIncrements.length) { output.members[i].z = output.members[i].z + zSlope * obsIncrements[i]; }
         double xSlope = regressionSlope(output.yValues, output.xValues);
         zSlope = regressionSlope(output.yValues, output.zValues);
         obsIncrements = this.getObservationIncrements(output.yValues, posteriorMean.y, posteriorSpread.y);
-        foreach(i; 0..obsIncrements.length) { output.members[i].x = output.members[i].x + xSlope * obsIncrements[i]; }
+        //foreach(i; 0..obsIncrements.length) { output.members[i].x = output.members[i].x + xSlope * obsIncrements[i]; }
         foreach(i; 0..obsIncrements.length) { output.members[i].y = output.members[i].y + obsIncrements[i]; } //Regression of a variable onto itself returns 1
-        foreach(i; 0..obsIncrements.length) { output.members[i].z = output.members[i].z + zSlope * obsIncrements[i]; }
+        //foreach(i; 0..obsIncrements.length) { output.members[i].z = output.members[i].z + zSlope * obsIncrements[i]; }
         xSlope = regressionSlope(output.zValues, output.xValues);
         ySlope = regressionSlope(output.zValues, output.yValues);
         obsIncrements = this.getObservationIncrements(output.zValues, posteriorMean.z, posteriorSpread.z);
-        foreach(i; 0..obsIncrements.length) { output.members[i].x = output.members[i].x + xSlope * obsIncrements[i]; }
-        foreach(i; 0..obsIncrements.length) { output.members[i].y = output.members[i].y + ySlope * obsIncrements[i]; }
+        //foreach(i; 0..obsIncrements.length) { output.members[i].x = output.members[i].x + xSlope * obsIncrements[i]; }
+        //foreach(i; 0..obsIncrements.length) { output.members[i].y = output.members[i].y + ySlope * obsIncrements[i]; }
         foreach(i; 0..obsIncrements.length) { output.members[i].z = output.members[i].z + obsIncrements[i]; } //Regression of a variable onto itself returns 1
         return output;
     }
@@ -106,7 +107,7 @@ class EAKF : Assimilator {
             spreadRatio = posteriorSpread / standardDeviation(priorValues);
         }
         return priorValues.map!(
-            //   linear shift and stretch to equate prior distribution to posterior      
+            //linear shift and stretch to equate prior distribution to posterior      
             a => posteriorMean + spreadRatio * (a - mean(priorValues)) - a
         ).array;
     }

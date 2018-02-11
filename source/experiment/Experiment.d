@@ -4,6 +4,7 @@ import std.algorithm;
 import std.range;
 import std.typecons;
 import assimilation.Assimilator;
+import assimilation.EAKF;
 import assimilation.likelihood.Likelihood;
 import assimilation.likelihood.LikelihoodGetter;
 import data.Ensemble;
@@ -82,17 +83,17 @@ class Experiment {
      */
     Timeseries!Ensemble getEnsembleTimeseries(bool experiment)(double startTime, double endTime, double dt, double spinup, Ensemble ensemble) {
         Timeseries!Ensemble ensembleSeries = new Timeseries!Ensemble();
-        //import std.stdio;
+        import std.stdio;
         ensembleSeries.add(0, ensemble);
         assert(ensembleSeries.members !is null, "Ensemble series is null");
         //writeln("Ensemble Series Leggrtjb b4: ", ensembleSeries.length);
         //writeln("Statr ", startTime, "Efbh ", endTime, " dt ", dt);
         foreach(i; iota(startTime, endTime, dt)) {
             if(this.observations.times.canFind(i) && i >= spinup) {
+                //ensemble *= 1.5;
                 Timeseries!Ensemble placeholder = new Timeseries!Ensemble(ensembleSeries.members, ensembleSeries.times);
                 this.assimilator.setLikelihood(experiment? this.likelihoodGetter(i, ensembleSeries) : this.likelihoodGetter(i));
-                ensembleSeries = new Timeseries!Ensemble(placeholder.members, placeholder.times);
-                //writeln("Length after assimilation at time ", i, ": ", ensembleSeries.length);
+                //ensembleSeries = new Timeseries!Ensemble(placeholder.members, placeholder.times);
                 ensemble = this.assimilator(ensemble);
             }
             ensemble = this.integrator(ensemble, dt);
