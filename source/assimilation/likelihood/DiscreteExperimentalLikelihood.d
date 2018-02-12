@@ -3,6 +3,7 @@ module assimilation.likelihood.DiscreteExperimentalLikelihood;
 import std.algorithm;
 import std.array;
 import std.conv;
+import std.datetime;
 import std.math;
 import std.parallelism;
 import std.range;
@@ -42,7 +43,6 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
      */
     override Likelihood opCall(double time, Timeseries!Ensemble ensembles) {
         Ensemble ensemble = ensembles.members[$ - 1];
-        import std.stdio;
         assert(ensembles.times[$ - 1] + maximumOffset > ensembles.times[$ - 1]);
         //The following code does not work because of dlang iota implementation, so I have bypassed that manually for now
         /*foreach(i; iota(start, end, step)) {

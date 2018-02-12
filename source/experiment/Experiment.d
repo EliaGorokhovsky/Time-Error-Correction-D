@@ -1,6 +1,7 @@
 module experiment.Experiment;
 
 import std.algorithm;
+import std.datetime;
 import std.math;
 import std.range;
 import std.typecons;
@@ -94,9 +95,11 @@ class Experiment {
             if(this.observations.times.any!(a => a.approxEqual(i, 1e-06, 1e-06)) && i >= spinup) {
                 ensemble *= 1.5;
                 Timeseries!Ensemble placeholder = new Timeseries!Ensemble(ensembleSeries.members, ensembleSeries.times);
+                immutable long currentTime = Clock.currStdTime;
                 this.assimilator.setLikelihood(experiment? this.likelihoodGetter(i, placeholder) : this.likelihoodGetter(i));
+                writeln("At time ", i, " setting likelihood took ", cast(double)(Clock.currStdTime - currentTime) / 10000000., " seconds");
                 ensemble = this.assimilator(ensemble);
-                writeln("Time: ", i, " has number of ensembles in timeseries as ", ensembleSeries.length);
+                //writeln("Time: ", i, " has number of ensembles in timeseries as ", ensembleSeries.length);
             }
             ensemble = this.integrator(ensemble, dt);
             ensembleSeries.add(i + dt, ensemble);

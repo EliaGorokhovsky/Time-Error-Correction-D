@@ -1,6 +1,7 @@
 module assimilation.likelihood.LikelihoodGetter;
 
 import std.algorithm;
+import std.math;
 import assimilation.likelihood.Likelihood;
 import data.Ensemble;
 import data.Timeseries;
@@ -23,7 +24,7 @@ class LikelihoodGetter {
      * Returns likelihood packaged with mean and deviation for a given time
      */
     Likelihood opCall(double time) {
-        assert(this.observations.times.canFind(time));
+        assert(this.observations.times.any!(a => a.approxEqual(time)), "Time not in list");
         return new Likelihood(this.observations.timeAssociate[time], this.stateError);
     }
 

@@ -26,14 +26,14 @@ void run() {
 	//Universal
 	Vector startState = Vector(1, 1, 1); ///The initial point of the truth
 	const double startTime = 0; ///The initial time with which to associate the initial point
-	const double endTime = 20; ///The time at which to stop the experiment
+	const double endTime = 200; ///The time at which to stop the experiment
 	const double dt = 0.01; ///The length of each step of the integrator
 	Lorenz63 system = new Lorenz63(); ///The dynamical system used as an environment for the experiment
 	RK4 integrator = new RK4(system); ///The integrator used to return points from previous points
 	//Getting observations
 	Vector actualError = Vector(0.5, 0.5, 0.5); ///The standard deviation of the Gaussian error in space
 	const double obsStartTime = 0; ///When to start observing
-	const double obsEndTime = 20; ///When to stop observing
+	const double obsEndTime = 200; ///When to stop observing
 	const double timeError = 0.0; ///The standard deviation of the Gaussian error in time (may change to non-Gaussian in the future)
 	const double observationInterval = 0.1; ///The time in between observations
 	//Assimilation
