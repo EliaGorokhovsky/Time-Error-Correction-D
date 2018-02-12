@@ -4,6 +4,7 @@ import std.algorithm;
 import std.datetime;
 import std.math;
 import std.range;
+import std.stdio;
 import std.typecons;
 import std.file;
 import assimilation.Assimilator;

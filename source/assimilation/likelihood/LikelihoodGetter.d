@@ -25,7 +25,7 @@ class LikelihoodGetter {
      */
     Likelihood opCall(double time) {
         assert(this.observations.times.any!(a => a.approxEqual(time)), "Time not in list");
-        return new Likelihood(this.observations.timeAssociate[time], this.stateError);
+        return new Likelihood(this.observations.value(time), this.stateError);
     }
 
     /**

@@ -33,7 +33,7 @@ void run(double observationInterval, double timeError, Vector error) {
 	//Getting observations
 	Vector actualError = error; ///The standard deviation of the Gaussian error in space
 	const double obsStartTime = 0; ///When to start observing
-	const double obsEndTime = 100; ///When to stop observing
+	const double obsEndTime = 200; ///When to stop observing
 	//Assimilation
 	Vector expectedError = error; ///The a priori expected standard deviation for Gaussian space error
 	const double ensembleStartTime = startTime; ///When to create the ensemble
@@ -47,9 +47,9 @@ void run(double observationInterval, double timeError, Vector error) {
 	RHF experimentalAssimilator = new RHF(); ///The assimilation method for the treatment 
 	const double minimumOffset = -0.1; ///The first time that is a valid time for observation relative to reported time
 	const double maximumOffset = 0.1; ///The last time that is a valid time for observation relative to reported time
-	const uint bins = 10; ///The amount of different time intervals tested in experimental likelihood algorithm
+	const uint bins = 25; ///The amount of different time intervals tested in experimental likelihood algorithm
 	//Experimental constants
-	const string filename = "data/DataCollection.csv"; ///The name of the file to write to
+	const string filename = "data/demos/timeLikelihoodTest.csv"; ///The name of the file to write to
 	File file = File(filename, "a"); ///The file to be written to
 
 	writeln("Control:");
@@ -81,15 +81,15 @@ void run(double observationInterval, double timeError, Vector error) {
 	);
 	immutable double treatmentRMSE = RMSE(treatment.ensembleSeries, treatment.truth);
 	writeln("Treatment RMSE is " ~ treatmentRMSE.to!string);
-	file.writeln(observationInterval, ", ", timeError, ", ", error.x, ", ", controlRMSE, ", ", treatmentRMSE);
+	file.writeln(observationInterval, ", ", timeError, ", ", error.x, ", ", controlRMSE, ", ", treatmentRMSE, ", ", (cast(DiscreteExperimentalLikelihood) treatment.likelihoodGetter).timeLikelihood);
 }
 
 void main() {
-	double[] observationIntervals = [0.5, 1, 2];
-	double[] timeErrors = [0, 0.001, 0.01, 0.5];
-	double[] errors = [0.001, 0.1, 0.5, 1];
-	uint trials = 5;
-	File("data/DataCollection.csv", "a").writeln("Observation Interval, Time Error, State Error");
+	double[] observationIntervals = [0.1];
+	double[] timeErrors = [0.01];
+	double[] errors = [0.5];
+	uint trials = 1;
+	File("data/DataCollection.csv", "a").writeln("Observation Interval, Time Error, State Error, timeLikelihood");
 	//TODO: Make this clearer
 	foreach(observationInterval; observationIntervals) {
 		foreach(timeError; timeErrors) {
