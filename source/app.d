@@ -20,8 +20,8 @@ import integrators.RK4;
 import systems.Circle;
 import systems.System;
 import systems.Lorenz63;
-
-void run() {
+0.5, 0.05, 0.1
+void run(double observationInterval, double timeError, Vector error) {
 	//Declare experiment parameters
 	//Universal
 	Vector startState = Vector(1, 1, 1); ///The initial point of the truth
@@ -31,13 +31,13 @@ void run() {
 	Lorenz63 system = new Lorenz63(); ///The dynamical system used as an environment for the experiment
 	RK4 integrator = new RK4(system); ///The integrator used to return points from previous points
 	//Getting observations
-	Vector actualError = Vector(0.1, 0.1, 0.1); ///The standard deviation of the Gaussian error in space
+	Vector actualError = error; ///The standard deviation of the Gaussian error in space
 	const double obsStartTime = 0; ///When to start observing
 	const double obsEndTime = 100; ///When to stop observing
-	const double timeError = 0.05; ///The standard deviation of the Gaussian error in time (may change to non-Gaussian in the future)
-	const double observationInterval = 0.5; ///The time in between observations
+	const double timeError = timeError; ///The standard deviation of the Gaussian error in time (may change to non-Gaussian in the future)
+	const double observationInterval = observationInterval; ///The time in between observations
 	//Assimilation
-	Vector expectedError = Vector(0.1, 0.1, 0.1); ///The a priori expected standard deviation for Gaussian space error
+	Vector expectedError = error; ///The a priori expected standard deviation for Gaussian space error
 	const double ensembleStartTime = startTime; ///When to create the ensemble
 	const double ensembleEndTime = endTime; ///When to stop assimilating
 	const double ensembledt = dt; ///The step for ensemble integration
@@ -87,7 +87,18 @@ void run() {
 }
 
 void main() {
-	foreach(i; 0..1) {
-		run();
+	double[] observationIntervals = [0.5, 1, 2];
+	double[] timeErrors = [0, 0.001, 0.01, 0.5];
+	double[] errors = [0.1, 0.5, 1];
+	uint trials;
+	//TODO: Make this clearer
+	foreach(observationInterval; observationIntervals) {
+		foreach(timeError; timeErrors) {
+			foreach(error; errors) {
+				foreach(i; 0..trials) {
+					run(observationInterval, timeError, Vector(error, error, error));
+				}
+			}
+		}
 	}
 }
