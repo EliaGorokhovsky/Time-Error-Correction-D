@@ -1,6 +1,7 @@
 module experiment.Experiment;
 
 import std.algorithm;
+import std.math;
 import std.range;
 import std.typecons;
 import std.file;
@@ -90,12 +91,12 @@ class Experiment {
         foreach(i; iota(startTime, endTime, dt)) {
             //File stateFile = File("data/tests/trialRun.csv", "a");
             //stateFile.writeln(ensemble);
-            if(this.observations.times.canFind(i) && i >= spinup) {
+            if(this.observations.times.any!(a => a.approxEqual(i, 1e-06, 1e-06)) && i >= spinup) {
                 ensemble *= 1.5;
                 Timeseries!Ensemble placeholder = new Timeseries!Ensemble(ensembleSeries.members, ensembleSeries.times);
-                this.assimilator.setLikelihood(experiment? this.likelihoodGetter(i, ensembleSeries) : this.likelihoodGetter(i));
+                this.assimilator.setLikelihood(experiment? this.likelihoodGetter(i, placeholder) : this.likelihoodGetter(i));
                 ensemble = this.assimilator(ensemble);
-                writeln("Time: ", i);
+                writeln("Time: ", i, " has number of ensembles in timeseries as ", ensembleSeries.length);
             }
             ensemble = this.integrator(ensemble, dt);
             ensembleSeries.add(i + dt, ensemble);

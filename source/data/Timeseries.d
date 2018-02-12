@@ -1,6 +1,7 @@
 module data.Timeseries;
 
 import std.algorithm;
+import std.math;
 import data.Ensemble;
 import data.Vector;
 import integrators.Integrator;
@@ -85,8 +86,9 @@ class Timeseries(T) {
      * TODO: Interpolate instead
      */
     T value(double time, Integrator integrator = null) {
-        if(this.times.canFind(time)) { 
-            return this.timeAssociate[time]; 
+        if(this.times.any!(a => a.approxEqual(time))) { 
+            double newTime = this.times.find!(a => a.approxEqual(time))[0];
+            return this.timeAssociate[newTime]; 
         }
         else {
             ulong lastCountedTime = (this.times.countUntil!"a > b"(time) > 0)? this.times.countUntil!"a > b"(time) - 1 : 0;
