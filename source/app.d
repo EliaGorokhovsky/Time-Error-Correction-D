@@ -34,8 +34,6 @@ void run(double observationInterval, double timeError, Vector error) {
 	Vector actualError = error; ///The standard deviation of the Gaussian error in space
 	const double obsStartTime = 0; ///When to start observing
 	const double obsEndTime = 100; ///When to stop observing
-	const double timeError = timeError; ///The standard deviation of the Gaussian error in time (may change to non-Gaussian in the future)
-	const double observationInterval = observationInterval; ///The time in between observations
 	//Assimilation
 	Vector expectedError = error; ///The a priori expected standard deviation for Gaussian space error
 	const double ensembleStartTime = startTime; ///When to create the ensemble
@@ -90,7 +88,7 @@ void main() {
 	double[] observationIntervals = [0.5, 1, 2];
 	double[] timeErrors = [0, 0.001, 0.01, 0.5];
 	double[] errors = [0.001, 0.1, 0.5, 1];
-	uint trials;
+	uint trials = 5;
 	File("data/DataCollection.csv", "a").writeln("Observation Interval, Time Error, State Error");
 	//TODO: Make this clearer
 	foreach(observationInterval; observationIntervals) {
