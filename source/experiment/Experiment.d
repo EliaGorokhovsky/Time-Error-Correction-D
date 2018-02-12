@@ -95,13 +95,20 @@ class Experiment {
             if(this.observations.times.any!(a => a.approxEqual(i, 1e-06, 1e-06)) && i >= spinup) {
                 ensemble *= 1.5;
                 Timeseries!Ensemble placeholder = new Timeseries!Ensemble(ensembleSeries.members, ensembleSeries.times);
-                immutable long currentTime = Clock.currStdTime;
+                //immutable long currentTime = Clock.currStdTime;
                 this.assimilator.setLikelihood(experiment? this.likelihoodGetter(i, placeholder) : this.likelihoodGetter(i));
-                writeln("At time ", i, " setting likelihood took ", cast(double)(Clock.currStdTime - currentTime) / 10000000., " seconds");
+                //writeln("At time ", i, " setting likelihood took ", cast(double)(Clock.currStdTime - currentTime) / 10000000., " seconds");
                 ensemble = this.assimilator(ensemble);
-                //writeln("Time: ", i, " has number of ensembles in timeseries as ", ensembleSeries.length);
+                writeln("Time: ", i, " has ensemble mean as ", ensemble.eMean);
             }
+            Ensemble newEnsemble = new Ensemble(ensemble.members);
+            if(checkNaN(ensemble.xValues)) writeln(i, " before integrator (x)");
+            if(checkNaN(ensemble.yValues)) writeln(i, " before integrator (y)");
+            if(checkNaN(ensemble.zValues)) writeln(i, " before integrator (z)");
             ensemble = this.integrator(ensemble, dt);
+            if(checkNaN(ensemble.xValues)) writeln(i, " after integrator given previous ensemble (x) ", newEnsemble.xValues);
+            if(checkNaN(ensemble.yValues)) writeln(i, " after integrator given previous ensemble (y) ", newEnsemble.yValues);
+            if(checkNaN(ensemble.zValues)) writeln(i, " after integrator given previous ensemble (z) ", newEnsemble.zValues);
             ensembleSeries.add(i + dt, ensemble);
         }
         this.ensembleSeries = ensembleSeries;

@@ -49,12 +49,12 @@ void run() {
 	RHF experimentalAssimilator = new RHF(); ///The assimilation method for the treatment 
 	const double minimumOffset = -0.1; ///The first time that is a valid time for observation relative to reported time
 	const double maximumOffset = 0.1; ///The last time that is a valid time for observation relative to reported time
-	const uint bins = 2; ///The amount of different time intervals tested in experimental likelihood algorithm
+	const uint bins = 10; ///The amount of different time intervals tested in experimental likelihood algorithm
 	//Experimental constants
 	const string filename = "data/testTreatment.csv"; ///The name of the file to write to
 	File file = File(filename, "a"); ///The file to be written to
 
-	/*writeln("Control:");
+	writeln("Control:");
 	Experiment control = new Experiment(integrator, controlAssimilator);
 	//Get truth
 	control.getTruth(startState, startTime, endTime, dt);

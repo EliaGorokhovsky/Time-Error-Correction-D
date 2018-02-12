@@ -59,27 +59,31 @@ class RHF : Assimilator {
         assert(!checkNaN(this.xLikelihood), "NaN in X likelihood");
         assert(!checkNaN(this.xLikelihood), "NaN in Y likelihood");
         assert(!checkNaN(this.xLikelihood), "NaN in Z likelihood");
+        if(checkNaN(this.xLikelihood) || checkNaN(this.yLikelihood) || checkNaN(this.zLikelihood)) writeln("NaN in Likelihood");
         assert(!checkNaN(prior.xValues), "NaN in X prior");
         assert(!checkNaN(prior.yValues), "NaN in Y prior");
         assert(!checkNaN(prior.zValues), "NaN in Z prior");
+        if(checkNaN(prior.xValues) || checkNaN(prior.yValues) || checkNaN(prior.zValues)) writeln("NaN in prior");
         Ensemble output = prior.copy();
+        immutable double[] x = output.xValues.idup;
         double ySlope = regressionSlope(output.xValues, output.yValues);
+        if(output.xValues != x) writeln(x, " as opposed to ", output.xValues);
         double zSlope = regressionSlope(output.xValues, output.zValues);
         double[] obsIncrements = this.getObservationIncrements(output.xValues, this.xLikelihood);
         foreach(i; 0..obsIncrements.length) { output.members[i].x = output.members[i].x + obsIncrements[i]; } //Regression of a variable onto itself returns 1
-        foreach(i; 0..obsIncrements.length) { output.members[i].y = output.members[i].y + ySlope * obsIncrements[i]; }
-        foreach(i; 0..obsIncrements.length) { output.members[i].z = output.members[i].z + zSlope * obsIncrements[i]; }
+        //foreach(i; 0..obsIncrements.length) { output.members[i].y = output.members[i].y + ySlope * obsIncrements[i]; }
+        //foreach(i; 0..obsIncrements.length) { output.members[i].z = output.members[i].z + zSlope * obsIncrements[i]; }
         double xSlope = regressionSlope(output.yValues, output.xValues);
         zSlope = regressionSlope(output.yValues, output.zValues);
         obsIncrements = this.getObservationIncrements(output.yValues, this.yLikelihood);
-        foreach(i; 0..obsIncrements.length) { output.members[i].x = output.members[i].x + xSlope * obsIncrements[i]; }
+        //foreach(i; 0..obsIncrements.length) { output.members[i].x = output.members[i].x + xSlope * obsIncrements[i]; }
         foreach(i; 0..obsIncrements.length) { output.members[i].y = output.members[i].y + obsIncrements[i]; } //Regression of a variable onto itself returns 1
-        foreach(i; 0..obsIncrements.length) { output.members[i].z = output.members[i].z + zSlope * obsIncrements[i]; }
+        //foreach(i; 0..obsIncrements.length) { output.members[i].z = output.members[i].z + zSlope * obsIncrements[i]; }
         xSlope = regressionSlope(output.zValues, output.xValues);
         ySlope = regressionSlope(output.zValues, output.yValues);
         obsIncrements = this.getObservationIncrements(output.zValues, this.zLikelihood);
-        foreach(i; 0..obsIncrements.length) { output.members[i].x = output.members[i].x + xSlope * obsIncrements[i]; }
-        foreach(i; 0..obsIncrements.length) { output.members[i].y = output.members[i].y + ySlope * obsIncrements[i]; }
+        //foreach(i; 0..obsIncrements.length) { output.members[i].x = output.members[i].x + xSlope * obsIncrements[i]; }
+        //foreach(i; 0..obsIncrements.length) { output.members[i].y = output.members[i].y + ySlope * obsIncrements[i]; }
         foreach(i; 0..obsIncrements.length) { output.members[i].z = output.members[i].z + obsIncrements[i]; } //Regression of a variable onto itself returns 1
         return output;
     }
@@ -193,6 +197,8 @@ class RHF : Assimilator {
                                     posteriorPoints ~= root2;
                                     found = true;
                                 } else {
+                                //    writeln(sortedPrior);
+                                    writeln(priorValues);
                                     writeln("Lower x value: ", sortedPrior[cumulativeMassIndex - 2], " upper x value: ", sortedPrior[cumulativeMassIndex - 1], " upper x value 2: ", sortedPrior[cumulativeMassIndex]);
                                     writeln("left height: ", leftHeight, " right height: ", rightHeight);
                                     writeln("a: ", a, " b: ", b, " c: ", c);
