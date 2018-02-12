@@ -59,15 +59,12 @@ class RHF : Assimilator {
         assert(!checkNaN(this.xLikelihood), "NaN in X likelihood");
         assert(!checkNaN(this.xLikelihood), "NaN in Y likelihood");
         assert(!checkNaN(this.xLikelihood), "NaN in Z likelihood");
-        if(checkNaN(this.xLikelihood) || checkNaN(this.yLikelihood) || checkNaN(this.zLikelihood)) writeln("NaN in Likelihood");
         assert(!checkNaN(prior.xValues), "NaN in X prior");
         assert(!checkNaN(prior.yValues), "NaN in Y prior");
         assert(!checkNaN(prior.zValues), "NaN in Z prior");
-        if(checkNaN(prior.xValues) || checkNaN(prior.yValues) || checkNaN(prior.zValues)) writeln("NaN in prior");
         Ensemble output = prior.copy();
         immutable double[] x = output.xValues.idup;
         double ySlope = regressionSlope(output.xValues, output.yValues);
-        if(output.xValues != x) writeln(x, " as opposed to ", output.xValues);
         double zSlope = regressionSlope(output.xValues, output.zValues);
         double[] obsIncrements = this.getObservationIncrements(output.xValues, this.xLikelihood);
         foreach(i; 0..obsIncrements.length) { output.members[i].x = output.members[i].x + obsIncrements[i]; } //Regression of a variable onto itself returns 1
@@ -197,8 +194,7 @@ class RHF : Assimilator {
                                     posteriorPoints ~= root2;
                                     found = true;
                                 } else {
-                                //    writeln(sortedPrior);
-                                    writeln(priorValues);
+                                    writeln("Prior: ", priorValues);
                                     writeln("Lower x value: ", sortedPrior[cumulativeMassIndex - 2], " upper x value: ", sortedPrior[cumulativeMassIndex - 1], " upper x value 2: ", sortedPrior[cumulativeMassIndex]);
                                     writeln("left height: ", leftHeight, " right height: ", rightHeight);
                                     writeln("a: ", a, " b: ", b, " c: ", c);
@@ -211,17 +207,9 @@ class RHF : Assimilator {
                             }
                         }
                     } 
-                    /*else {
-                        import std.stdio;
-                        writeln(passedMass);
-                        writeln(cumulativeMass[cumulativeMassIndex - 1], " ", cumulativeMass[cumulativeMassIndex]);
-                        assert(0, "");
-                    }*/
                 }
             }
         }
-        //writeln("Prior values: ", priorValues);
-        //writeln("Posterior points: ", posteriorPoints);
         double[] observationIncrements;
         assert(!checkNaN(posteriorPoints), "RHF(214): NaN in posteriorPoints");
         foreach(i; 0..sortedPrior.length) {

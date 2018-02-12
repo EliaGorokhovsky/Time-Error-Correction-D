@@ -69,7 +69,6 @@ class Experiment {
     /**
      * Gets a set of observations 
      * Ends at the last interval before endTime
-     * TODO
      */
     Timeseries!Vector getObservations(double startTime, double endTime, double interval) {
         Timeseries!Vector observations = new Timeseries!Vector();
@@ -86,29 +85,17 @@ class Experiment {
      */
     Timeseries!Ensemble getEnsembleTimeseries(bool experiment)(double startTime, double endTime, double dt, double spinup, Ensemble ensemble) {
         Timeseries!Ensemble ensembleSeries = new Timeseries!Ensemble();
-        import std.stdio;
         ensembleSeries.add(0, ensemble);
         assert(ensembleSeries.members !is null, "Ensemble series is null");
         foreach(i; iota(startTime, endTime, dt)) {
-            //File stateFile = File("data/tests/trialRun.csv", "a");
-            //stateFile.writeln(ensemble);
             if(this.observations.times.any!(a => a.approxEqual(i, 1e-06, 1e-06)) && i >= spinup) {
                 ensemble *= 1.5;
                 Timeseries!Ensemble placeholder = new Timeseries!Ensemble(ensembleSeries.members, ensembleSeries.times);
-                //immutable long currentTime = Clock.currStdTime;
                 this.assimilator.setLikelihood(experiment? this.likelihoodGetter(i, placeholder) : this.likelihoodGetter(i));
-                //writeln("At time ", i, " setting likelihood took ", cast(double)(Clock.currStdTime - currentTime) / 10000000., " seconds");
                 ensemble = this.assimilator(ensemble);
-                writeln("Time: ", i, " has ensemble mean as ", ensemble.eMean);
             }
             Ensemble newEnsemble = new Ensemble(ensemble.members);
-            if(checkNaN(ensemble.xValues)) writeln(i, " before integrator (x)");
-            if(checkNaN(ensemble.yValues)) writeln(i, " before integrator (y)");
-            if(checkNaN(ensemble.zValues)) writeln(i, " before integrator (z)");
             ensemble = this.integrator(ensemble, dt);
-            if(checkNaN(ensemble.xValues)) writeln(i, " after integrator given previous ensemble (x) ", newEnsemble.xValues);
-            if(checkNaN(ensemble.yValues)) writeln(i, " after integrator given previous ensemble (y) ", newEnsemble.yValues);
-            if(checkNaN(ensemble.zValues)) writeln(i, " after integrator given previous ensemble (z) ", newEnsemble.zValues);
             ensembleSeries.add(i + dt, ensemble);
         }
         this.ensembleSeries = ensembleSeries;
