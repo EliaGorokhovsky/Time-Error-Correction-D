@@ -26,14 +26,14 @@ void run() {
 	//Universal
 	Vector startState = Vector(1, 1, 1); ///The initial point of the truth
 	const double startTime = 0; ///The initial time with which to associate the initial point
-	const double endTime = 200; ///The time at which to stop the experiment
+	const double endTime = 20; ///The time at which to stop the experiment
 	const double dt = 0.01; ///The length of each step of the integrator
 	Lorenz63 system = new Lorenz63(); ///The dynamical system used as an environment for the experiment
 	RK4 integrator = new RK4(system); ///The integrator used to return points from previous points
 	//Getting observations
 	Vector actualError = Vector(0.5, 0.5, 0.5); ///The standard deviation of the Gaussian error in space
 	const double obsStartTime = 0; ///When to start observing
-	const double obsEndTime = 200; ///When to stop observing
+	const double obsEndTime = 20; ///When to stop observing
 	const double timeError = 0.0; ///The standard deviation of the Gaussian error in time (may change to non-Gaussian in the future)
 	const double observationInterval = 0.1; ///The time in between observations
 	//Assimilation
@@ -47,15 +47,14 @@ void run() {
 	const int ensembleSize = 80;
 	EAKF controlAssimilator = new EAKF(); ///The assimilation method for the control
 	RHF experimentalAssimilator = new RHF(); ///The assimilation method for the treatment 
-	const double minimumOffset = -0.2; ///The first time that is a valid time for observation relative to reported time
-	const double maximumOffset = 0.2; ///The last time that is a valid time for observation relative to reported time
-	const uint bins = 10; ///The amount of different time intervals tested in experimental likelihood algorithm
+	const double minimumOffset = -0.1; ///The first time that is a valid time for observation relative to reported time
+	const double maximumOffset = 0.1; ///The last time that is a valid time for observation relative to reported time
+	const uint bins = 2; ///The amount of different time intervals tested in experimental likelihood algorithm
 	//Experimental constants
 	const string filename = "data/testTreatment.csv"; ///The name of the file to write to
 	File file = File(filename, "a"); ///The file to be written to
-	//File stateFile = File("data/tests/controlRun31.csv", "a");
 
-	writeln("Control:");
+	/*writeln("Control:");
 	Experiment control = new Experiment(integrator, controlAssimilator);
 	//Get truth
 	control.getTruth(startState, startTime, endTime, dt);
@@ -68,7 +67,7 @@ void run() {
 		ensembleStartTime, ensembleEndTime, ensembledt, spinup, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation)
 	);
 	immutable double controlRMSE = RMSE(control.ensembleSeries, control.truth);
-	writeln("Control RMSE is ", controlRMSE);
+	writeln("Control RMSE is ", controlRMSE);*/
 	writeln("Experiment:");
 	Experiment treatment = new Experiment(integrator, experimentalAssimilator);
 	treatment.getTruth(startState, startTime, endTime, dt);
@@ -83,7 +82,8 @@ void run() {
 		ensembleStartTime, ensembleEndTime, ensembledt, spinup, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation)
 	);
 	immutable double treatmentRMSE = RMSE(treatment.ensembleSeries, treatment.truth);
-	writeln("Treatment RMSE is ", treatmentRMSE ~ ", " ~ treatmentRMSE.to!string);
+	writeln("Treatment RMSE is " ~ treatmentRMSE.to!string);
+	//file.writeln(controlRMSE, ", ", treatmentRMSE);
 }
 
 void main() {

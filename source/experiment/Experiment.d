@@ -3,6 +3,7 @@ module experiment.Experiment;
 import std.algorithm;
 import std.range;
 import std.typecons;
+import std.file;
 import assimilation.Assimilator;
 import assimilation.EAKF;
 import assimilation.likelihood.Likelihood;
@@ -86,22 +87,20 @@ class Experiment {
         import std.stdio;
         ensembleSeries.add(0, ensemble);
         assert(ensembleSeries.members !is null, "Ensemble series is null");
-        //writeln("Ensemble Series Leggrtjb b4: ", ensembleSeries.length);
-        //writeln("Statr ", startTime, "Efbh ", endTime, " dt ", dt);
         foreach(i; iota(startTime, endTime, dt)) {
+            //File stateFile = File("data/tests/trialRun.csv", "a");
+            //stateFile.writeln(ensemble);
             if(this.observations.times.canFind(i) && i >= spinup) {
-                //ensemble *= 1.5;
+                ensemble *= 1.5;
                 Timeseries!Ensemble placeholder = new Timeseries!Ensemble(ensembleSeries.members, ensembleSeries.times);
                 this.assimilator.setLikelihood(experiment? this.likelihoodGetter(i, ensembleSeries) : this.likelihoodGetter(i));
-                //ensembleSeries = new Timeseries!Ensemble(placeholder.members, placeholder.times);
                 ensemble = this.assimilator(ensemble);
+                writeln("Time: ", i);
             }
             ensemble = this.integrator(ensemble, dt);
             ensembleSeries.add(i + dt, ensemble);
-            //writeln("Length at time ", i, ": ", ensembleSeries.length);
         }
         this.ensembleSeries = ensembleSeries;
-        //writeln("Ensemble Series Leggrtjb: ", this.ensembleSeries.length);
         return this.ensembleSeries;
     }
 

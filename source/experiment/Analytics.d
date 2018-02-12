@@ -1,7 +1,10 @@
 module experiment.Analytics;
 
-import std.stdio;
+import std.algorithm;
+import std.conv;
 import std.math;
+import std.stdio;
+import std.traits;
 import data.Ensemble;
 import data.Timeseries;
 import data.Vector;
@@ -12,14 +15,20 @@ import data.Vector;
  * RMSE is the square root of the mean of the squares deviations of the ensemble means
  */
 double RMSE(Timeseries!Ensemble data, Timeseries!Vector truth) {
-    if(data.members.length != truth.members.length) writeln("Data length: ", data.members.length, " Truth length: ", truth.members.length);
-    assert(data.members.length == truth.members.length, "Unequal dataset lengths");
+    assert(data.members.length == truth.members.length, "Unequal dataset lengths: " ~ data.members.length.to!string ~ " and " ~ truth.members.length.to!string);
     double sumOfSquares = 0;
     foreach(i; 0..truth.members.length) {
         sumOfSquares += (truth.members[i].x - data.members[i].eMean.x).pow(2) + (truth.members[i].y - data.members[i].eMean.y).pow(2) + (truth.members[i].z - data.members[i].eMean.z).pow(2);
     }
     double squareMean = sumOfSquares / truth.members.length;
     return sqrt(squareMean);
+}
+
+/**
+ * Verifies if any elements in an array are NaN
+ */
+bool checkNaN(T)(T[] toCheck) {
+    return toCheck.any!(a => a.isNaN);
 }
 
 unittest {

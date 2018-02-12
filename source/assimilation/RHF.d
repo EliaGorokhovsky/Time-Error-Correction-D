@@ -2,6 +2,7 @@ module assimilation.RHF;
 
 import std.algorithm;
 import std.array;
+import std.conv;
 import std.mathspecial;
 import std.range;
 import std.stdio;
@@ -10,6 +11,7 @@ import assimilation.Assimilator;
 import assimilation.likelihood.Likelihood;
 import data.Ensemble;
 import data.Vector;
+import experiment.Analytics;
 import utility.ArrayStats;
 import utility.Math;
 import utility.NDVector;
@@ -54,6 +56,12 @@ class RHF : Assimilator {
      * This RHF gets observation increments for a variable, regresses it onto all three variables, then repeats for the other variables
      */
     override Ensemble opCall(Ensemble prior) {
+        assert(!checkNaN(this.xLikelihood), "NaN in X likelihood");
+        assert(!checkNaN(this.xLikelihood), "NaN in Y likelihood");
+        assert(!checkNaN(this.xLikelihood), "NaN in Z likelihood");
+        assert(!checkNaN(prior.xValues), "NaN in X prior");
+        assert(!checkNaN(prior.yValues), "NaN in Y prior");
+        assert(!checkNaN(prior.zValues), "NaN in Z prior");
         Ensemble output = prior.copy();
         double ySlope = regressionSlope(output.xValues, output.yValues);
         double zSlope = regressionSlope(output.xValues, output.zValues);
@@ -156,36 +164,44 @@ class RHF : Assimilator {
                             posteriorPoints ~= sortedPrior[cumulativeMassIndex - 2] + (passedMass - cumulativeMass[cumulativeMassIndex - 1]) / (cumulativeMass[cumulativeMassIndex] - cumulativeMass[cumulativeMassIndex - 1]) * (sortedPrior[cumulativeMassIndex - 1] - sortedPrior[cumulativeMassIndex - 2]);
                             found = true;
                         } else {
-                            //We're using trapezoidal quadrature to get the new point. 
-                            //box is index of cumulative mass, box - 1 is ensemble point
-                            double leftHeight = height[cumulativeMassIndex - 2] * likelihood[indices[cumulativeMassIndex - 2]] / massSum;
-                            double rightHeight = height[cumulativeMassIndex - 2] * likelihood[indices[cumulativeMassIndex - 1]] / massSum;
-                            //Solve a quadratic to get its roots. Quadratic is the integral of the line that forms the top of a trapezoidal bin
-                            double a = 0.5 * (rightHeight - leftHeight) / (sortedPrior[cumulativeMassIndex - 1] - sortedPrior[cumulativeMassIndex - 2]);
-                            double b = leftHeight;
-                            double c = cumulativeMass[cumulativeMassIndex - 1] - passedMass;
-                            Tuple!(double, double) roots = solveQuadratic(a, b, c);
-                            double root1 = roots[0];
-                            double root2 = roots[1];
-                            root1 += sortedPrior[cumulativeMassIndex - 2];
-                            root2 += sortedPrior[cumulativeMassIndex - 2];
-                            if(root1 >= sortedPrior[cumulativeMassIndex - 2] && root1 <= sortedPrior[cumulativeMassIndex - 1] ||
-                            root1.approxEqual(sortedPrior[cumulativeMassIndex - 2]) || root1.approxEqual(sortedPrior[cumulativeMassIndex - 1])) {
-                                posteriorPoints ~= root1;
+                            if(passedMass.approxEqual(cumulativeMass[cumulativeMassIndex - 1])) {
+                                posteriorPoints ~= sortedPrior[cumulativeMassIndex - 2];
                                 found = true;
-                            } else if(root2 >= sortedPrior[cumulativeMassIndex - 1] && root2 <= sortedPrior[cumulativeMassIndex] || 
-                            root1.approxEqual(sortedPrior[cumulativeMassIndex - 1]) || root1.approxEqual(sortedPrior[cumulativeMassIndex])) {
-                                posteriorPoints ~= root2;
+                            } else if(passedMass.approxEqual(cumulativeMass[cumulativeMassIndex])) {
+                                posteriorPoints ~= sortedPrior[cumulativeMassIndex - 1];
                                 found = true;
                             } else {
-                                writeln("Lower x value: ", sortedPrior[cumulativeMassIndex - 2], " upper x value: ", sortedPrior[cumulativeMassIndex - 1], " upper x value 2: ", sortedPrior[cumulativeMassIndex]);
-                                writeln("left height: ", leftHeight, " right height: ", rightHeight);
-                                writeln("a: ", a, " b: ", b, " c: ", c);
-                                writeln("root1: ", root1, " root2: ", root2);
-                                writeln("ensemble point index: ", cumulativeMassIndex - 2);
-                                writeln("Cumulative mass lower point: ", cumulativeMass[cumulativeMassIndex - 1], " cumulative mass higher point: ", cumulativeMass[cumulativeMassIndex]);
-                                writeln("Passed mass: ", passedMass);
-                                assert(0, "Failed to get proper roots for trapezoidal quadrature.");
+                                //We're using trapezoidal quadrature to get the new point. 
+                                //box is index of cumulative mass, box - 1 is ensemble point
+                                double leftHeight = height[cumulativeMassIndex - 2] * likelihood[indices[cumulativeMassIndex - 2]] / massSum;
+                                double rightHeight = height[cumulativeMassIndex - 2] * likelihood[indices[cumulativeMassIndex - 1]] / massSum;
+                                //Solve a quadratic to get its roots. Quadratic is the integral of the line that forms the top of a trapezoidal bin
+                                double a = 0.5 * (rightHeight - leftHeight) / (sortedPrior[cumulativeMassIndex - 1] - sortedPrior[cumulativeMassIndex - 2]);
+                                double b = leftHeight;
+                                double c = cumulativeMass[cumulativeMassIndex - 1] - passedMass;
+                                Tuple!(double, double) roots = solveQuadratic(a, b, c);
+                                double root1 = roots[0];
+                                double root2 = roots[1];
+                                root1 += sortedPrior[cumulativeMassIndex - 2];
+                                root2 += sortedPrior[cumulativeMassIndex - 2];
+                                if(root1 >= sortedPrior[cumulativeMassIndex - 2] && root1 <= sortedPrior[cumulativeMassIndex - 1] ||
+                                root1.approxEqual(sortedPrior[cumulativeMassIndex - 2]) || root1.approxEqual(sortedPrior[cumulativeMassIndex - 1])) {
+                                    posteriorPoints ~= root1;
+                                    found = true;
+                                } else if(root2 >= sortedPrior[cumulativeMassIndex - 1] && root2 <= sortedPrior[cumulativeMassIndex] || 
+                                root1.approxEqual(sortedPrior[cumulativeMassIndex - 1]) || root1.approxEqual(sortedPrior[cumulativeMassIndex])) {
+                                    posteriorPoints ~= root2;
+                                    found = true;
+                                } else {
+                                    writeln("Lower x value: ", sortedPrior[cumulativeMassIndex - 2], " upper x value: ", sortedPrior[cumulativeMassIndex - 1], " upper x value 2: ", sortedPrior[cumulativeMassIndex]);
+                                    writeln("left height: ", leftHeight, " right height: ", rightHeight);
+                                    writeln("a: ", a, " b: ", b, " c: ", c);
+                                    writeln("root1: ", root1, " root2: ", root2);
+                                    writeln("ensemble point index: ", cumulativeMassIndex - 2);
+                                    writeln("Cumulative mass lower point: ", cumulativeMass[cumulativeMassIndex - 1], " cumulative mass higher point: ", cumulativeMass[cumulativeMassIndex]);
+                                    writeln("Passed mass: ", passedMass);
+                                    assert(0, "Failed to get proper roots for trapezoidal quadrature.");
+                                }
                             }
                         }
                     } 
@@ -201,13 +217,13 @@ class RHF : Assimilator {
         //writeln("Prior values: ", priorValues);
         //writeln("Posterior points: ", posteriorPoints);
         double[] observationIncrements;
-        assert(posteriorPoints.filter!(a => isNaN(cast(float) a)).array.length == 0, "RHF(205): NaN in posteriorPoints");
+        assert(!checkNaN(posteriorPoints), "RHF(214): NaN in posteriorPoints");
         foreach(i; 0..sortedPrior.length) {
             observationIncrements ~= 0;
         }
+        assert(posteriorPoints.length == sortedPrior.length, "There are " ~ posteriorPoints.length.to!string ~ " posterior points and " ~ sortedPrior.length.to!string ~ " prior points.");
         foreach(i; 0..sortedPrior.length) {
             assert(indices[i] < observationIncrements.length);
-            assert(posteriorPoints.length == sortedPrior.length);
             observationIncrements[indices[i]] = posteriorPoints[i] - sortedPrior[i];
         }
         return cast(double[])observationIncrements;
