@@ -49,7 +49,7 @@ void run(double observationInterval, double timeError, Vector error) {
 	const double maximumOffset = 0.1; ///The last time that is a valid time for observation relative to reported time
 	const uint bins = 10; ///The amount of different time intervals tested in experimental likelihood algorithm
 	//Experimental constants
-	const string filename = "data/DataCollection.csv"; ///The name of the file to write to
+	const string filename = "data/dataCollection/ContinuousTimeErrorData2.csv"; ///The name of the file to write to
 	File file = File(filename, "a"); ///The file to be written to
 
 	writeln("Control:");
@@ -85,11 +85,14 @@ void run(double observationInterval, double timeError, Vector error) {
 }
 
 void main() {
-	double[] observationIntervals = [0.5, 1, 2];
-	double[] timeErrors = [0, 0.001, 0.01, 0.5];
-	double[] errors = [0.001, 0.1, 0.5, 1];
+	double[] observationIntervals = [1];
+	double[] timeErrors = [];
+	foreach(i; 0 .. 20) {
+		timeErrors ~= cast(double)i / 200;
+	}
+	double[] errors = [0.1];
 	uint trials = 5;
-	File("data/DataCollection.csv", "a").writeln("Observation Interval, Time Error, State Error");
+	File("data/dataCollection/ContinuousTimeErrorData2.csv", "a").writeln("Observation Interval, Time Error, State Error");
 	//TODO: Make this clearer
 	foreach(observationInterval; observationIntervals) {
 		foreach(timeError; timeErrors) {
