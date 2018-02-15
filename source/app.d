@@ -15,6 +15,7 @@ import data.Vector;
 import data.Ensemble;
 import experiment.Analytics;
 import experiment.Experiment;
+import experiment.error.GaussianError;
 import experiment.error.GaussianTimeError;
 import integrators.RK4;
 import systems.Circle;
@@ -33,7 +34,7 @@ void run(double observationInterval, double timeError, Vector error) {
 	//Getting observations
 	Vector actualError = error; ///The standard deviation of the Gaussian error in space
 	const double obsStartTime = 0; ///When to start observing
-	const double obsEndTime = 200; ///When to stop observing
+	const double obsEndTime = 100; ///When to stop observing
 	//Assimilation
 	Vector expectedError = error; ///The a priori expected standard deviation for Gaussian space error
 	const double ensembleStartTime = startTime; ///When to create the ensemble
@@ -41,16 +42,16 @@ void run(double observationInterval, double timeError, Vector error) {
 	const double ensembledt = dt; ///The step for ensemble integration
 	const double spinup = 0.1; ///The amount of time the ensemble is run before beginning to assimilate
 	const Vector ensembleGenesis = Vector(1, 1, 1); ///The mean of the initial ensemble distribution
-	const Vector ensembleDeviation = Vector(1, 1, 1); ///The standard deviation of the initial ensemble distribution
+	const Vector ensembleDeviation = Vector(0.1, 0.1, 0.1); ///The standard deviation of the initial ensemble distribution
 	const int ensembleSize = 80;
 	EAKF controlAssimilator = new EAKF(); ///The assimilation method for the control
 	RHF experimentalAssimilator = new RHF(); ///The assimilation method for the treatment 
 	const double minimumOffset = -0.1; ///The first time that is a valid time for observation relative to reported time
 	const double maximumOffset = 0.1; ///The last time that is a valid time for observation relative to reported time
-	const uint bins = 25; ///The amount of different time intervals tested in experimental likelihood algorithm
+	const uint bins = 20; ///The amount of different time intervals tested in experimental likelihood algorithm
 	//Experimental constants
-	const string filename = "data/demos/timeLikelihoodTest.csv"; ///The name of the file to write to
-	File file = File(filename, "a"); ///The file to be written to
+	//const string filename = "data/demos/control12Billion.csv"; ///The name of the file to write to
+	//File file = File(filename, "a"); ///The file to be written to
 
 	writeln("Control:");
 	Experiment control = new Experiment(integrator, controlAssimilator);
@@ -66,6 +67,9 @@ void run(double observationInterval, double timeError, Vector error) {
 	);
 	immutable double controlRMSE = RMSE(control.ensembleSeries, control.truth);
 	writeln("Control RMSE is ", controlRMSE);
+	/*foreach(i; 0..control.truth.times.length) {
+		file.writeln(control.truth.times[i], ", ", control.truth.members[i], ",, ", control.ensembleSeries.times[i], ", ", control.ensembleSeries.members[i], ", , ", control.observations.times.canFind(control.truth.times[i])? control.observations.timeAssociate[control.truth.times[i]].to!string : "");
+	}*/
 	writeln("Experiment:");
 	Experiment treatment = new Experiment(integrator, experimentalAssimilator);
 	treatment.getTruth(startState, startTime, endTime, dt);
@@ -81,13 +85,13 @@ void run(double observationInterval, double timeError, Vector error) {
 	);
 	immutable double treatmentRMSE = RMSE(treatment.ensembleSeries, treatment.truth);
 	writeln("Treatment RMSE is " ~ treatmentRMSE.to!string);
-	file.writeln(observationInterval, ", ", timeError, ", ", error.x, ", ", controlRMSE, ", ", treatmentRMSE, ", ", (cast(DiscreteExperimentalLikelihood) treatment.likelihoodGetter).timeLikelihood);
+	//file.writeln(observationInterval, ", ", timeError, ", ", error.x, ", ", controlRMSE, ", ", treatmentRMSE, ", ", (cast(DiscreteExperimentalLikelihood) treatment.likelihoodGetter).timeLikelihood);
 }
 
 void main() {
 	double[] observationIntervals = [0.1];
-	double[] timeErrors = [0.01];
-	double[] errors = [0.5];
+	double[] timeErrors = [0.05];
+	double[] errors = [0.1];
 	uint trials = 1;
 	File("data/DataCollection.csv", "a").writeln("Observation Interval, Time Error, State Error, timeLikelihood");
 	//TODO: Make this clearer

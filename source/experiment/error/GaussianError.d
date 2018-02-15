@@ -1,5 +1,6 @@
 module experiment.error.GaussianError;
 
+import std.algorithm;
 import mir.random;
 import mir.random.variable;
 import data.Timeseries;

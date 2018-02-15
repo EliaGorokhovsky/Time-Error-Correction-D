@@ -86,12 +86,12 @@ class Timeseries(T) {
      * TODO: Interpolate instead
      */
     T value(double time, Integrator integrator = null) {
-        if(this.times.any!(a => a.approxEqual(time))) { 
-            double newTime = this.times.find!(a => a.approxEqual(time))[0];
+        if(this.times.any!(a => a.approxEqual(time, 1e-6, 1e-6))) { 
+            double newTime = this.times.find!(a => a.approxEqual(time, 1e-6, 1e-6))[0];
             return this.timeAssociate[newTime]; 
         }
         else {
-            ulong lastCountedTime = (this.times.countUntil!"a > b"(time) > 0)? this.times.countUntil!"a > b"(time) - 1 : 0;
+            ulong lastCountedTime = clamp(this.times.countUntil!"a > b"(time) - 1, 0, 100000);
             double dt = time - this.times[cast(uint)lastCountedTime];
             return integrator(this.timeAssociate[this.times[cast(uint)lastCountedTime]], dt);
         }

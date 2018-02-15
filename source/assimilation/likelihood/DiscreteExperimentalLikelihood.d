@@ -58,7 +58,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
             ensemble = this.integrator(ensemble, step);
             ensembles.add(placeTime + step, ensemble);
         }
-        assert(this.observations.times.any!(a => a.approxEqual(time)), "Time not in observation times");
+        assert(this.observations.times.any!(a => a.approxEqual(time, 1e-6, 1e-6)), "Time not in observation times");
         ensemble = ensembles.value(time, this.integrator);
         assert(ensembles !is null);
         int[] timeLikelihood = this.getTimeLikelihood(time, ensembles);
@@ -105,7 +105,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
      * At a certain time, determines discretely defined likelihood in time
      */
     int[] getTimeLikelihood(double time, Timeseries!Ensemble ensembles) {
-        assert(this.observations.times.any!(a => a.approxEqual(time)), "Time not in observation times");
+        assert(this.observations.times.any!(a => a.approxEqual(time, 1e-6, 1e-6)), "Time not in observation times");
         Vector obs = this.observations.value(time);
         const double binWidth = (this.maximumOffset - this.minimumOffset) / this.bins;
         double[] binMiddles = iota(time + this.minimumOffset + binWidth / 2, time + this.maximumOffset, binWidth).array;
@@ -149,7 +149,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
      * TODO: don't integrate backwards
      */
     Vector[] getObservationTrajectory(double time) {
-        assert(this.observations.times.any!(a => a.approxEqual(time)), "Time not in observation times");
+        assert(this.observations.times.any!(a => a.approxEqual(time, 1e-6, 1e-6)), "Time not in observation times");
         Vector obs = this.observations.value(time);
         Vector[] baselines;
         const double binWidth = (this.maximumOffset - this.minimumOffset) / this.bins;
