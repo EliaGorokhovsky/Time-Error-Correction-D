@@ -18,6 +18,7 @@ class Timeseries(T) {
 
     /**
      * Returns an associative array associating time with state
+     * Do not use this; favor value() instead
      */
     @property T[double] timeAssociate() {
         assert(this.members.length == this.times.length);
