@@ -21,9 +21,7 @@ import systems.Circle;
 import systems.System;
 import systems.Lorenz63;
 
-static File file = File("data/dataCollection/ContinuousTimeErrorData.csv");
-
-void run(double observationInterval, double timeError, Vector error) {
+void run(double observationInterval, double timeError, Vector error, File file) {
 	//Declare experiment parameters
 	//Universal
 	Vector startState = Vector(1, 1, 1); ///The initial point of the truth
@@ -84,6 +82,7 @@ void run(double observationInterval, double timeError, Vector error) {
 }
 
 void main() {
+	File file = File("data/dataCollection/ContinuousTimeErrorData.csv", "a");
 	double[] observationIntervals = [0.1, 0.5, 1, 5];
 	double[] timeErrors = [];
 	foreach(i; 0 .. 50) {
@@ -97,7 +96,7 @@ void main() {
 		foreach(timeError; timeErrors) {
 			foreach(error; errors) {
 				foreach(i; 0..trials) {
-					run(observationInterval, timeError, Vector(error, error, error));
+					run(observationInterval, timeError, Vector(error, error, error), file);
 				}
 			}
 		}
