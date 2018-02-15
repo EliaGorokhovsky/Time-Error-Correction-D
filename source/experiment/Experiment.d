@@ -94,7 +94,6 @@ class Experiment {
                 this.assimilator.setLikelihood(experiment? this.likelihoodGetter(i, placeholder) : this.likelihoodGetter(i));
                 ensemble = this.assimilator(ensemble);
             }
-            Ensemble newEnsemble = new Ensemble(ensemble.members);
             ensemble = this.integrator(ensemble, dt);
             ensembleSeries.add(i + dt, ensemble);
         }

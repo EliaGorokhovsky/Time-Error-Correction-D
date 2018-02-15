@@ -24,7 +24,7 @@ class LikelihoodGetter {
      * Returns likelihood packaged with mean and deviation for a given time
      */
     Likelihood opCall(double time) {
-        assert(this.observations.times.any!(a => a.approxEqual(time)), "Time not in list");
+        assert(this.observations.times.any!(a => a.approxEqual(time, 1e-6, 1e-6)), "Time not in list");
         return new Likelihood(this.observations.timeAssociate[time], this.stateError);
     }
 

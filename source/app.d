@@ -21,6 +21,8 @@ import systems.Circle;
 import systems.System;
 import systems.Lorenz63;
 
+static File file = File("data/dataCollection/ContinuousTimeErrorData.csv");
+
 void run(double observationInterval, double timeError, Vector error) {
 	//Declare experiment parameters
 	//Universal
@@ -47,10 +49,7 @@ void run(double observationInterval, double timeError, Vector error) {
 	RHF experimentalAssimilator = new RHF(); ///The assimilation method for the treatment 
 	const double minimumOffset = -0.1; ///The first time that is a valid time for observation relative to reported time
 	const double maximumOffset = 0.1; ///The last time that is a valid time for observation relative to reported time
-	const uint bins = 10; ///The amount of different time intervals tested in experimental likelihood algorithm
-	//Experimental constants
-	const string filename = "data/dataCollection/ContinuousTimeErrorData2.csv"; ///The name of the file to write to
-	File file = File(filename, "a"); ///The file to be written to
+	const uint bins = 20; ///The amount of different time intervals tested in experimental likelihood algorithm
 
 	writeln("Control:");
 	Experiment control = new Experiment(integrator, controlAssimilator);
@@ -81,18 +80,18 @@ void run(double observationInterval, double timeError, Vector error) {
 	);
 	immutable double treatmentRMSE = RMSE(treatment.ensembleSeries, treatment.truth);
 	writeln("Treatment RMSE is " ~ treatmentRMSE.to!string);
-	file.writeln(observationInterval, ", ", timeError, ", ", error.x, ", ", controlRMSE, ", ", treatmentRMSE);
+	file.writeln(observationInterval, ", ", error.x, ", ", timeError, ", ", controlRMSE, ", ", treatmentRMSE);
 }
 
 void main() {
-	double[] observationIntervals = [1];
+	double[] observationIntervals = [0.1, 0.5, 1, 5];
 	double[] timeErrors = [];
-	foreach(i; 0 .. 20) {
-		timeErrors ~= cast(double)i / 200;
+	foreach(i; 0 .. 50) {
+		timeErrors ~= cast(double)i / 1000;
 	}
-	double[] errors = [0.1];
+	double[] errors = [0.1, 0.5, 1];
 	uint trials = 5;
-	File("data/dataCollection/ContinuousTimeErrorData2.csv", "a").writeln("Observation Interval, Time Error, State Error");
+	file.writeln("Observation Interval, State Error, Time Error, Control RMSE, Treatment RMSE");
 	//TODO: Make this clearer
 	foreach(observationInterval; observationIntervals) {
 		foreach(timeError; timeErrors) {

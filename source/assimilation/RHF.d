@@ -135,12 +135,6 @@ class RHF : Assimilator {
         foreach(i; 0..mass.length) {
             cumulativeMass ~= cumulativeMass[i] + mass[i];
         }
-        //writeln("LikelihoodDensity: ", likelihoodDensity);
-        //writeln("Mass: ", mass);
-        //writeln("Cumulative mass: ", cumulativeMass);
-        //writeln("priorValues: ", priorValues);
-        //writeln("sorted prior: ", sortedPrior);
-        //writeln("indices: ", indices);
         //Searching for boxes in which to put each ensemble member
         //TODO: lowest box
         double[] posteriorPoints;

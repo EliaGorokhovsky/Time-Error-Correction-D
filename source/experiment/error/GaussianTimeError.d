@@ -33,7 +33,7 @@ class GaussianTimeError : ErrorGenerator {
     override Vector generate(double time) {
         auto gen = Random(unpredictableSeed);
         auto newTime = NormalVariable!double(time, this.timeError);
-        Vector base = this.truth.value(this.firstTime + abs(newTime(gen) - this.firstTime), this.integrator);
+        this.truth.value(clamp(0, newTime(gen), 1000000), this.integrator);
         auto normalX = NormalVariable!double(base.x, this.error.x);
         auto normalY = NormalVariable!double(base.y, this.error.y);
         auto normalZ = NormalVariable!double(base.z, this.error.z);

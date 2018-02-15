@@ -86,8 +86,8 @@ class Timeseries(T) {
      * TODO: Interpolate instead
      */
     T value(double time, Integrator integrator = null) {
-        if(this.times.any!(a => a.approxEqual(time))) { 
-            double newTime = this.times.find!(a => a.approxEqual(time))[0];
+        if(this.times.any!(a => a.approxEqual(time, 1e-6, 1e-6)))) { 
+            double newTime = this.times.find!(a => a.approxEqual(time, 1e-6, 1e-6)))[0];
             return this.timeAssociate[newTime]; 
         }
         else {
