@@ -56,7 +56,7 @@ class RK4 : Integrator {
         Vector newState = state;
         double dt = timeDifference / steps;
         foreach(i; 0..steps) {
-            newState = this.integrate(state, dt);
+            newState = this.integrate(newState, dt);
         }
         return newState;
     }

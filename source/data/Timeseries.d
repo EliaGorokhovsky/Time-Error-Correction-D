@@ -85,18 +85,20 @@ class Timeseries(T) {
      * If there is no corresponding state in the timeseries, use an integrator
      * TODO: Interpolate instead
      */
-    T value(double time, Integrator integrator = null) {
-        if(this.times.any!(a => a.approxEqual(time, 1e-6, 1e-6))) { 
-            double newTime = this.times.find!(a => a.approxEqual(time, 1e-6, 1e-6))[0];
-            return this.timeAssociate[newTime]; 
-        }
-        else {
-            ulong lastCountedTime = clamp(this.times.countUntil!"a > b"(time) - 1, 0, 100000);
-            double dt = time - this.times[cast(uint)lastCountedTime];
-            return integrator(this.timeAssociate[this.times[cast(uint)lastCountedTime]], dt);
+    static if (is(T == Vector) || is(T == Ensemble)) {
+        T value(double time, Integrator integrator = null) {
+            if(this.times.any!(a => a.approxEqual(time, 1e-6, 1e-6))) { 
+                double newTime = this.times.find!(a => a.approxEqual(time, 1e-6, 1e-6))[0];
+                return this.timeAssociate[newTime]; 
+            }
+            else {
+                ulong lastCountedTime = clamp(this.times.countUntil!"a > b"(time) - 1, 0, 100000);
+                double dt = time - this.times[cast(uint)lastCountedTime];
+                return integrator(this.timeAssociate[this.times[cast(uint)lastCountedTime]], dt);
+            }
         }
     }
-
+    
     /**
      * Gets the nth value of the timeseries
      */

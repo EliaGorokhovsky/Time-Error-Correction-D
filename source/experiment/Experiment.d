@@ -9,6 +9,7 @@ import std.typecons;
 import std.file;
 import assimilation.Assimilator;
 import assimilation.EAKF;
+import assimilation.likelihood.DiscreteExperimentalLikelihood;
 import assimilation.likelihood.Likelihood;
 import assimilation.likelihood.LikelihoodGetter;
 import data.Ensemble;
@@ -27,6 +28,8 @@ class Experiment {
     Integrator integrator;
     ErrorGenerator errorGen;
     Assimilator assimilator;
+    EAKF standardEAKF = new EAKF();
+    LikelihoodGetter standardLikelihood;
     LikelihoodGetter likelihoodGetter;
 
     Timeseries!Vector truth;
@@ -84,16 +87,25 @@ class Experiment {
      * Runs an ensemble over an interval
      * Spin-up time: no assimilation
      */
-    Timeseries!Ensemble getEnsembleTimeseries(bool experiment)(double startTime, double endTime, double dt, double spinup, Ensemble ensemble) {
+    Timeseries!Ensemble getEnsembleTimeseries(bool experiment)(double startTime, double endTime, double dt, double spinup, double priming, Ensemble ensemble) {
         Timeseries!Ensemble ensembleSeries = new Timeseries!Ensemble();
         ensembleSeries.add(0, ensemble);
         assert(ensembleSeries.members !is null, "Ensemble series is null");
         foreach(i; iota(startTime, endTime, dt)) {
             if(this.observations.times.any!(a => a.approxEqual(i, 1e-06, 1e-06)) && i >= spinup) {
-                ensemble *= 1.5;
+                //ensemble *= 1.5;
                 Timeseries!Ensemble placeholder = new Timeseries!Ensemble(ensembleSeries.members, ensembleSeries.times);
                 this.assimilator.setLikelihood(experiment? this.likelihoodGetter(i, placeholder) : this.likelihoodGetter(i));
-                ensemble = this.assimilator(ensemble);
+                if(experiment && i < priming) {
+                    this.standardEAKF.setLikelihood(this.standardLikelihood(i));
+                    ensemble = this.standardEAKF(ensemble);
+                }
+                else {
+                    ensemble = this.assimilator(ensemble);
+                }
+            }
+            if(i % 5 == 0) { 
+                writeln("Time ", i, " for ", experiment? "treatment" : "control");
             }
             ensemble = this.integrator(ensemble, dt);
             ensembleSeries.add(i + dt, ensemble);

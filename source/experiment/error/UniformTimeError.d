@@ -1,4 +1,4 @@
-module experiment.error.GaussianTimeError;
+module experiment.error.UniformTimeError;
 
 import std.algorithm;
 import std.math;
@@ -10,9 +10,9 @@ import experiment.error.ErrorGenerator;
 import integrators.Integrator;
 
 /**
- * Gets error with a Gaussian permutation from a single point
+ * Gets error with a uniform time permutation from a single point
  */
-class GaussianTimeError : ErrorGenerator {
+class UniformTimeError : ErrorGenerator {
 
     Vector error;
     double timeError;
@@ -29,11 +29,11 @@ class GaussianTimeError : ErrorGenerator {
     }
 
     /**
-     * Gets a point observation at a given time by first getting a time from a normal distribution and then a position
+     * Gets a point observation at a given time by first getting a time from a uniform distribution and then a position
      */
     override Vector generate(double time) {
         auto gen = Random(unpredictableSeed);
-        auto newTime = NormalVariable!double(time, this.timeError);
+        auto newTime = UniformVariable!double(time - this.timeError, time + this.timeError);
         Vector base = this.truth.value(clamp(newTime(gen), 0, 1000000), this.integrator);
         auto normalX = NormalVariable!double(base.x, this.error.x);
         auto normalY = NormalVariable!double(base.y, this.error.y);

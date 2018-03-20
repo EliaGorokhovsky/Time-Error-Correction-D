@@ -24,7 +24,7 @@ double normalIntegral(double val, double mu = 0, double sigma = 1) {
 }
 
 /**
- * Gets the pprobability density of a value in a normal distribution
+ * Gets the probability density of a value in a normal distribution
  * Actually the area under the normal distribution from val - x to val + x as x -> 0
  * This is calculated as:
  *           1                 -(x - mu)^2 / (2sigma^2)    

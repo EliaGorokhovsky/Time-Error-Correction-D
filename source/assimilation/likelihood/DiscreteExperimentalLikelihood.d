@@ -7,12 +7,15 @@ import std.datetime;
 import std.math;
 import std.parallelism;
 import std.range;
+import mir.random;
+import mir.random.variable;
 import assimilation.likelihood.Likelihood;
 import assimilation.likelihood.LikelihoodGetter;
 import data.Ensemble;
 import data.Timeseries;
 import data.Vector;
 import integrators.Integrator;
+import utility.ArrayStats;
 import utility.Normal;
 
 class DiscreteExperimentalLikelihood : LikelihoodGetter {
@@ -22,6 +25,73 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
     double maximumOffset; ///The most a true time can be more than the errant time; this is equal to the most an errant time can be less than the truth
     uint bins; ///The amount of bins into which to sort the time likelihood
     int[] timeLikelihood;
+
+    /**
+     * Gets the mathematical expected value for time offset. This is the weighted average of the bin middles.
+     */
+    @property double expectedTime() {
+        assert(bins == timeLikelihood.length, "Likelihood length is not the same as bin length.");
+        const double binWidth = (this.maximumOffset - this.minimumOffset) / this.bins;
+        double[] binMiddles = [this.minimumOffset + binWidth / 2];
+        foreach(i; 1..bins) {
+            binMiddles ~= binMiddles[i - 1] + binWidth;
+        }
+        double[] likelihood = this.normalizedTimeLikelihood;
+        foreach(index, ref component; binMiddles.parallel) {
+            component *= likelihood[index];
+        } 
+        return binMiddles.sum;
+    }
+
+    /**
+     * Returns standard deviation of time likelihood fit to a Gaussian
+     */
+    @property double timeDeviation() {
+        double expectedOffset = this.expectedTime;
+        assert(bins == timeLikelihood.length);
+        const double binWidth = (this.maximumOffset - this.minimumOffset) / this.bins;
+        double[] binMiddles = [this.minimumOffset + binWidth / 2];
+        foreach(i; 1..bins) {
+            binMiddles ~= binMiddles[i - 1] + binWidth;
+        }  
+        double[] likelihood = this.normalizedTimeLikelihood;
+        foreach(index, ref component; binMiddles.parallel) {
+            component = ((component - expectedOffset).pow(2)) * likelihood[index];
+        } 
+        return sqrt(binMiddles.sum);
+    }
+
+    /** 
+     * Performs a chi-square test on the discrete likelihood distribution with its normal fit
+     */
+    @property double timeGaussianity() {
+        double expectedMean = this.expectedTime;
+        double expectedDeviation = this.timeDeviation;
+        const double binWidth = (this.maximumOffset - this.minimumOffset) / this.bins;
+        double[] binMiddles = [this.minimumOffset + binWidth / 2];
+        double[] likelihood = this.normalizedTimeLikelihood;
+        double[] expectedValues = binMiddles.dup.map!(a => normalVal(a, expectedMean, expectedDeviation)).array;
+        double expectedSum = expectedValues.sum;
+        foreach(ref component; expectedValues) {
+            component /= expectedSum;
+        }
+        foreach(index, ref component; likelihood) {
+            component = ((component - expectedValues[index]).pow(2)) / expectedValues[index];
+        }
+        return likelihood.sum;
+    }
+
+    /**
+     * Returns time likelihood normalized to a discrete PDF
+     */
+    @property double[] normalizedTimeLikelihood() {
+        double[] normalizedLikelihood = this.timeLikelihood.to!(double[]);
+        immutable double sum = normalizedLikelihood.sum;
+        foreach(ref component; normalizedLikelihood.parallel) {
+            component /= sum;
+        }
+        return normalizedLikelihood;
+    }
 
     /**
      * Constructs a likelihood getter with information about the experiment, as well as a priori knowledge of time offset and desired number of bins for time offset likelihood
@@ -36,13 +106,106 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
         foreach(i; 0..bins) {
             this.timeLikelihood ~= 0;
         }
+        this.timeLikelihood[bins / 2] = 1;
+
     }
 
     /**
-     * Returns likelihood packaged with discretely defined experimentally determined for a given time
+     * Returns discretely defined likelihood
      */
     override Likelihood opCall(double time, Timeseries!Ensemble ensembles) {
-        Ensemble ensemble = ensembles.members[$ - 1];
+        //return this.likelihoodFromNormalTime(time, ensembles);
+        return this.normalLikelihood(time, ensembles);
+    }
+
+    /**
+     * Returns a normal likelihood from normal-assumed time
+     * TODO: Move into its own LikelihoodGetter
+     */
+    Likelihood normalLikelihood(double time, Timeseries!Ensemble ensembles) {
+        Vector obs = this.observations.value(time);
+        double expectedOffset = this.expectedTime;
+        double timeDeviation = this.timeDeviation;
+        double[] xPseudoMeasurements;
+        double[] yPseudoMeasurements;
+        double[] zPseudoMeasurements;            
+        auto gen = Random(unpredictableSeed);
+        foreach(i; 0..100) {
+            auto newTime = NormalVariable!double(expectedOffset, timeDeviation);
+            Vector base = this.integrator.integrateTo(obs, newTime(gen), 1);
+            auto normalX = NormalVariable!double(base.x, this.stateError.x);
+            auto normalY = NormalVariable!double(base.y, this.stateError.y);
+            auto normalZ = NormalVariable!double(base.z, this.stateError.z);
+            xPseudoMeasurements ~= normalX(gen);
+            yPseudoMeasurements ~= normalY(gen);
+            zPseudoMeasurements ~= normalZ(gen);
+        }
+        Vector meanVector = Vector(
+            mean(xPseudoMeasurements),
+            mean(yPseudoMeasurements),
+            mean(zPseudoMeasurements)
+        );
+        Vector deviationVector = Vector(
+            standardDeviation(xPseudoMeasurements),
+            standardDeviation(yPseudoMeasurements),
+            standardDeviation(zPseudoMeasurements)  
+        );
+        return new Likelihood(meanVector, deviationVector);
+    }
+
+    /**
+     * Returns likelihood packaged with discretely defined experimentally determined pdf for a given time
+     * Fits time likelihood to a Gaussian, then uses a Monte Carlo-style kernel density approximation with kernel widths 
+     * given by manufacturer
+     * Assumes time likelihood is Gaussian (data suggest it will be with current method; it is advised to use likelihoodFromDiscrete time otherwise)
+     */
+    Likelihood likelihoodFromNormalTime(double time, Timeseries!Ensemble ensembles) {
+        Ensemble ensemble = new Ensemble(ensembles.members[$ - 1].members);
+        double[] xLikelihood;
+        double[] yLikelihood;
+        double[] zLikelihood;
+        foreach(i; 0..ensemble.size) {
+            xLikelihood ~= 0.0000001;
+            yLikelihood ~= 0.0000001;
+            zLikelihood ~= 0.0000001;
+        }
+        Vector obs = this.observations.value(time);
+        double expectedOffset = this.expectedTime;
+        double timeDeviation = this.timeDeviation;
+        double[] pseudoTimes;
+        //Generates pseudotimes; number of kernels can be changed within the code, but sould probably be optimized
+        auto gen = Random(unpredictableSeed);
+        foreach(i; 0..100) {
+            auto newTimeVar = NormalVariable!double(expectedOffset, timeDeviation);
+            pseudoTimes ~= clamp(newTimeVar(gen), this.minimumOffset, this.maximumOffset);
+        }
+        Vector[] bases = pseudoTimes.dup.map!(a => Vector(a, 0, 0)).array;
+        foreach(ref component; bases.parallel) {
+            component = this.integrator.integrateTo(obs, component.x, 1);
+            foreach(index, ref pointProbability; xLikelihood.parallel) {
+                pointProbability += normalVal(ensemble.members[index].x, component.x, this.stateError.x);
+                yLikelihood[index] += normalVal(ensemble.members[index].y, component.y, this.stateError.y);
+                zLikelihood[index] += normalVal(ensemble.members[index].z, component.z, this.stateError.z);
+            }
+        }
+        double xSum = xLikelihood.sum;
+        double ySum = yLikelihood.sum;
+        double zSum = zLikelihood.sum;
+        assert(xSum != 0 && ySum != 0 && zSum != 0, "Experimental likelihood sum is 0");
+        foreach(index, ref component; timeLikelihood.parallel) {
+            xLikelihood[index] /= xSum;
+            yLikelihood[index] /= ySum;
+            zLikelihood[index] /= zSum;
+        }
+        return new Likelihood(xLikelihood, yLikelihood, zLikelihood);
+    }
+
+    /**
+     * Returns likelihood packaged with discretely defined experimentally determined pdf for a given time
+     * Assume likelihood histogram is accurate
+     */
+    Likelihood likelihoodFromDiscreteTime(double time, Timeseries!Ensemble ensembles) {
+        Ensemble ensemble = new Ensemble(ensembles.members[$ - 1].members);
         assert(ensembles.times[$ - 1] + maximumOffset > ensembles.times[$ - 1]);
         //The following code does not work because of dlang iota implementation, so I have bypassed that manually for now
         /*foreach(i; iota(start, end, step)) {
@@ -69,9 +232,9 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
         double[] yLikelihood;
         double[] zLikelihood;
         foreach(i; 0..ensemble.size) {
-            xLikelihood ~= 0;
-            yLikelihood ~= 0;
-            zLikelihood ~= 0;
+            xLikelihood ~= 0.0000001;
+            yLikelihood ~= 0.0000001;
+            zLikelihood ~= 0.0000001;
         }
         foreach(index, ref component; observationTrajectory.parallel) {
             xLikelihood = xLikelihood.map!(a => a + timeLikelihood[index] * normalVal(a, component.x, this.stateError.x)).array;
@@ -81,17 +244,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
         double xSum = xLikelihood.sum;
         double ySum = yLikelihood.sum;
         double zSum = zLikelihood.sum;
-        //writeln("Raw Sums ", xSum, " ", ySum, " ", zSum);
-        //If there is an issue with sums normalize
-        //This code is unsustainable so don't use it to solve the problem;
-        if(xSum == 0 || ySum == 0 || zSum == 0) {
-            xLikelihood = xLikelihood.map!(a => a + 0.1).array;
-            yLikelihood = yLikelihood.map!(a => a + 0.1).array;
-            zLikelihood = zLikelihood.map!(a => a + 0.1).array;
-        }
-        xSum = xLikelihood.sum;
-        ySum = yLikelihood.sum;
-        zSum = zLikelihood.sum;
+        assert(xSum != 0 && ySum != 0 && zSum != 0, "Experimental likelihood sum is 0");
         foreach(index, ref component; timeLikelihood.parallel) {
             xLikelihood[index] /= xSum;
             yLikelihood[index] /= ySum;
@@ -109,7 +262,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
         Vector obs = this.observations.value(time);
         const double binWidth = (this.maximumOffset - this.minimumOffset) / this.bins;
         double[] binMiddles = iota(time + this.minimumOffset + binWidth / 2, time + this.maximumOffset, binWidth).array;
-        //import std.stdio;
+        import std.stdio;
         //writeln("bin times ", binMiddles);
         //writeln("Ensemble mean ", ensembles.members[$-1].eMean);
         Vector[] binValues = binMiddles.map!(a => ensembles.meanSeries.value(a, this.integrator)).array;
@@ -133,18 +286,6 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
     }
 
     /**
-     * Performs getTimeLikelihood, but returns time likelihood normalized to a discrete PDF
-     */
-    double[] getNormalizedTimeLikelihood(double time, Timeseries!Ensemble ensembles) {
-        double[] normalizedLikelihood = cast(double[])this.getTimeLikelihood(time, ensembles);
-        immutable double sum = normalizedLikelihood.sum;
-        foreach(ref component; normalizedLikelihood.parallel) {
-            component /= sum;
-        }
-        return normalizedLikelihood;
-    }
-
-    /**
      * Gets baselines for each bin to find likelihood for a given observation 
      * TODO: don't integrate backwards
      */
@@ -153,11 +294,11 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
         Vector obs = this.observations.value(time);
         Vector[] baselines;
         const double binWidth = (this.maximumOffset - this.minimumOffset) / this.bins;
-        Vector binEdge = this.integrator.integrateTo(obs, this.minimumOffset, 10 * cast(uint)abs(this.minimumOffset) / this.bins);
+        Vector binEdge = this.integrator.integrateTo(obs, this.minimumOffset, 10 * cast(uint) (abs(this.minimumOffset) / binWidth));
         Vector state = this.integrator.integrate(binEdge, binWidth / 2);
         baselines ~= state;
         foreach(i; 0..this.bins - 1) {
-            state = this.integrator.integrate(binEdge, binWidth);
+            state = this.integrator.integrate(state, binWidth);
             baselines ~= state;
         }
         return baselines;
