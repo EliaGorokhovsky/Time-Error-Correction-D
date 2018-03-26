@@ -17,9 +17,9 @@ class Circle : System {
 
     override Vector opCall(Vector state) {
         return Vector(
-            10,
-            -5 * state.z,
-            8 * state.y
+            -state.y,
+            state.x,
+            1
         );
     }
 
