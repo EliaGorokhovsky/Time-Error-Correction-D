@@ -24,19 +24,19 @@ import systems.Circle;
 import systems.System;
 import systems.Lorenz63;
 
-void run(double observationInterval, double timeError, Vector error, File file1, File file2) {
+void run(double observationInterval, double timeError, Vector error) {
 	//Declare experiment parameters
 	//Universal
 	Vector startState = Vector(1, 1, 1); ///The initial point of the truth
 	const double startTime = 0; ///The initial time with which to associate the initial point
-	const double endTime = 200; ///The time at which to stop the experiment
+	const double endTime = 80; ///The time at which to stop the experiment
 	const double dt = 0.01; ///The length of each step of the integrator
 	Lorenz63 system = new Lorenz63(); ///The dynamical system used as an environment for the experiment
 	RK4 integrator = new RK4(system); ///The integrator used to return points from previous points
 	//Getting observations
 	Vector actualError = error; ///The standard deviation of the Gaussian error in space
 	const double obsStartTime = 0; ///When to start observing
-	const double obsEndTime = 200; ///When to stop observing
+	const double obsEndTime = 80; ///When to stop observing
 	//Assimilation
 	Vector expectedError = error; ///The a priori expected standard deviation for Gaussian space error
 	const double ensembleStartTime = startTime; ///When to create the ensemble
@@ -51,9 +51,8 @@ void run(double observationInterval, double timeError, Vector error, File file1,
 	const double minimumOffset = -0.1; ///The first time that is a valid time for observation relative to reported time
 	const double maximumOffset = 0.1; ///The last time that is a valid time for observation relative to reported time
 	const uint bins = 20; ///The amount of different time intervals tested in experimental likelihood algorithm
-	//Experimental constants
 
-	/*writeln("Control:");
+	writeln("Control:");
 	Experiment control = new Experiment(integrator, controlAssimilator);
 	//Get truth
 	control.getTruth(startState, startTime, endTime, dt);
@@ -63,13 +62,11 @@ void run(double observationInterval, double timeError, Vector error, File file1,
 	//Do assimilation
 	control.setLikelihood(new LikelihoodGetter(control.observations, expectedError));
 	control.getEnsembleTimeseries!false(
-		ensembleStartTime, ensembleEndTime, ensembledt, spinup, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation)
+		ensembleStartTime, ensembleEndTime, ensembledt, spinup, 0, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation)
 	);
 	immutable double controlRMSE = RMSE(control.ensembleSeries, control.truth);
 	writeln("Control RMSE is ", controlRMSE);
-	foreach(i; 0..control.truth.times.length) {
-		file1.writeln(control.truth.times[i], ", ", control.truth.members[i], ",, ", control.observations.times.canFind!(a => a.approxEqual(control.truth.times[i], 1e-6, 1e-6))? control.observations.value(control.truth.times[i]).to!string : "");
-	}*/
+
 	writeln("Experiment:");
 	Experiment treatment = new Experiment(integrator, experimentalAssimilator);
 	treatment.getTruth(startState, startTime, endTime, dt);
@@ -82,35 +79,23 @@ void run(double observationInterval, double timeError, Vector error, File file1,
 	);
 	treatment.standardLikelihood = new LikelihoodGetter(treatment.observations, expectedError);
 	treatment.getEnsembleTimeseries!true(
-		ensembleStartTime, ensembleEndTime, ensembledt, spinup, 50, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation)
+		ensembleStartTime, ensembleEndTime, ensembledt, spinup, 0, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation)
 	);
-	file2.open("data/dataCollection/TimeLikelihoodDataMass4.csv", "a");
-	file2.writeln(0, ",", timeError, ",", (cast(DiscreteExperimentalLikelihood) treatment.likelihoodGetter).timeLikelihood);
-	file2.close;
 	immutable double treatmentRMSE = RMSE(treatment.ensembleSeries, treatment.truth);
 	writeln("Treatment RMSE is " ~ treatmentRMSE.to!string);
-	file.writeln(observationInterval, ", ", error.x, ", ", timeError, ", ", controlRMSE, ", ", treatmentRMSE);
-	/*foreach(i; 0..treatment.truth.times.length) {
-		file1.writeln(treatment.truth.times[i], ", ", treatment.truth.members[i], ",, ", treatment.observations.times.canFind!(a => a.approxEqual(treatment.truth.times[i], 1e-6, 1e-6))? treatment.observations.timeAssociate[treatment.truth.times[i]].to!string : "");
-	}*/
-	//file.writeln(observationInterval, ", ", timeError, ", ", error.x, ", ", controlRMSE, ", ", treatmentRMSE, ", ", (cast(DiscreteExperimentalLikelihood) treatment.likelihoodGetter).timeLikelihood);
 }
 
 void main() {
 	double[] observationIntervals = [0.1];
-	double[] timeErrors = [0.01];
+	double[] timeErrors = [0.005];
 	double[] errors = [0.1];
 	uint trials = 1;
-	File file2 = File("data/dataCollection/TimeLikelihoodDataMass4.csv", "a");
-	File file1 = File("data/tests/dump2.csv", "a");
-	file2.writeln("timeLikelihood");
-	//TODO: Make this clearer
-	
+	//TODO: Make this clearer	
 	foreach(observationInterval; observationIntervals) {
 		foreach(timeError; timeErrors) {
 			foreach(error; errors) {
 				foreach(i; 0..trials) {
-					run(observationInterval, timeError, Vector(error, error, error), file1, file2);
+					run(observationInterval, timeError, Vector(error, error, error));
 				}
 			}
 		}
