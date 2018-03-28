@@ -79,15 +79,17 @@ void run(double observationInterval, double timeError, Vector error) {
 	);
 	treatment.standardLikelihood = new LikelihoodGetter(treatment.observations, expectedError);
 	treatment.getEnsembleTimeseries!true(
-		ensembleStartTime, ensembleEndTime, ensembledt, spinup, 0, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation)
+		ensembleStartTime, ensembleEndTime, ensembledt, spinup, 50, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation)
 	);
+	DiscreteExperimentalLikelihood treatmentLikelihood = cast(DiscreteExperimentalLikelihood) treatment.likelihoodGetter;
+	File("data/tests/timeLikelihoodSmoothTest.csv", "a").writeln(treatmentLikelihood.expectedTime, ",", treatmentLikelihood.timeDeviation, ",,", treatmentLikelihood.timeLikelihood);
 	immutable double treatmentRMSE = RMSE(treatment.ensembleSeries, treatment.truth);
 	writeln("Treatment RMSE is " ~ treatmentRMSE.to!string);
 }
 
 void main() {
 	double[] observationIntervals = [0.1];
-	double[] timeErrors = [0.005];
+	double[] timeErrors = [0.01];
 	double[] errors = [0.1];
 	uint trials = 1;
 	//TODO: Make this clearer	
