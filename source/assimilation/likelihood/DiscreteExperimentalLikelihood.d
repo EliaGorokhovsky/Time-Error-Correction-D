@@ -114,9 +114,10 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
      * Returns likelihood
      */
     override Likelihood opCall(double time, Timeseries!Ensemble ensembles) {
-        return this.likelihoodFromNormalTime(time, ensembles);
-        //return this.likelihoodFromDiscreteTime(time, ensembles);
-        //return this.normalLikelihood(time, ensembles);
+        //Choose one:
+        //return this.likelihoodFromNormalTime(time, ensembles); //Only works with RHF for now
+        //return this.likelihoodFromDiscreteTime(time, ensembles); //Only works with RHF for now
+        return this.normalLikelihood(time, ensembles); //Only works with EAKF for now
     }
 
     /**
@@ -124,6 +125,25 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
      * TODO: Move into its own LikelihoodGetter
      */
     Likelihood normalLikelihood(double time, Timeseries!Ensemble ensembles) {
+        Ensemble ensemble = new Ensemble(ensembles.members[$ - 1].members);
+        assert(ensembles.times[$ - 1] + maximumOffset > ensembles.times[$ - 1]);
+        //The following code does not work because of dlang iota implementation, so I have bypassed that manually for now
+        /*foreach(i; iota(start, end, step)) {
+            ensemble = this.integrator(ensemble, ensembles.dt);
+            ensembles.add(i + ensembles.dt, ensemble);
+        }*/
+        double start = ensembles.times[$ - 1];
+        double end = start + this.maximumOffset;
+        double step = ensembles.dt;
+        int steps = cast(int)((end - start) / step);
+        foreach(i; 0..steps) {
+            double placeTime = start + step * i;
+            ensemble = this.integrator(ensemble, step);
+            ensembles.add(placeTime + step, ensemble);
+        }
+        assert(this.observations.times.any!(a => a.approxEqual(time, 1e-6, 1e-6)), "Time not in observation times");
+        ensemble = ensembles.value(time, this.integrator);
+        assert(ensembles !is null);
         this.getTimeLikelihood(time, ensembles);
         Vector obs = this.observations.value(time);
         double expectedOffset = this.expectedTime;
@@ -162,8 +182,26 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
      * Assumes time likelihood is Gaussian (data suggest it will be with current method; it is advised to use likelihoodFromDiscrete time otherwise)
      */
     Likelihood likelihoodFromNormalTime(double time, Timeseries!Ensemble ensembles) {
-        this.getTimeLikelihood(time, ensembles);
         Ensemble ensemble = new Ensemble(ensembles.members[$ - 1].members);
+        assert(ensembles.times[$ - 1] + maximumOffset > ensembles.times[$ - 1]);
+        //The following code does not work because of dlang iota implementation, so I have bypassed that manually for now
+        /*foreach(i; iota(start, end, step)) {
+            ensemble = this.integrator(ensemble, ensembles.dt);
+            ensembles.add(i + ensembles.dt, ensemble);
+        }*/
+        double start = ensembles.times[$ - 1];
+        double end = start + this.maximumOffset;
+        double step = ensembles.dt;
+        int steps = cast(int)((end - start) / step);
+        foreach(i; 0..steps) {
+            double placeTime = start + step * i;
+            ensemble = this.integrator(ensemble, step);
+            ensembles.add(placeTime + step, ensemble);
+        }
+        assert(this.observations.times.any!(a => a.approxEqual(time, 1e-6, 1e-6)), "Time not in observation times");
+        ensemble = ensembles.value(time, this.integrator);
+        assert(ensembles !is null);
+        this.getTimeLikelihood(time, ensembles);
         double[] xLikelihood;
         double[] yLikelihood;
         double[] zLikelihood;
@@ -176,7 +214,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
         double expectedOffset = this.expectedTime;
         double timeDeviation = this.timeDeviation;
         double[] pseudoTimes;
-        //Generates pseudotimes; number of kernels can be changed within the code, but sould probably be optimized
+        //Generates pseudotimes; number of kernels can be changed within the code, but should probably be optimized
         auto gen = Random(unpredictableSeed);
         foreach(i; 0..100) {
             auto newTimeVar = NormalVariable!double(expectedOffset, timeDeviation);
@@ -278,15 +316,15 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
 
             //Option 1: Discrete binary
             //If within 3 standard deviations, use it
-            /*if(abs(distance.x) < 3 * this.stateError.x && abs(distance.y) < 3 * this.stateError.y && abs(distance.z) < 3 * this.stateError.z) {
+            if(abs(distance.x) < 3 * this.stateError.x && abs(distance.y) < 3 * this.stateError.y && abs(distance.z) < 3 * this.stateError.z) {
                 binQuantities[i] += 1;
-            }*/
+            }
 
             //Option 2: Smooth
             //Assume error is dimensionally independent, then find probability by multiplying the probabilities
-            binQuantities[i] += normalVal(distance.x, 0, this.stateError.x) 
+            /*binQuantities[i] += normalVal(distance.x, 0, this.stateError.x) 
                               * normalVal(distance.y, 0, this.stateError.y)
-                              * normalVal(distance.z, 0, this.stateError.z);
+                              * normalVal(distance.z, 0, this.stateError.z);*/
         }
         foreach(index, ref component; binQuantities.parallel) {
             this.timeLikelihood[index] += component;
