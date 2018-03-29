@@ -116,6 +116,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
     override Likelihood opCall(double time, Timeseries!Ensemble ensembles) {
         //return this.likelihoodFromNormalTime(time, ensembles);
         return this.normalLikelihood(time, ensembles);
+        //return this.likelihoodFromDiscreteTime(time, ensembles);
     }
 
     /**
@@ -123,6 +124,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
      * TODO: Move into its own LikelihoodGetter
      */
     Likelihood normalLikelihood(double time, Timeseries!Ensemble ensembles) {
+        this.getTimeLikelihood(time, ensembles);
         Vector obs = this.observations.value(time);
         double expectedOffset = this.expectedTime;
         double timeDeviation = this.timeDeviation;
@@ -160,6 +162,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
      * Assumes time likelihood is Gaussian (data suggest it will be with current method; it is advised to use likelihoodFromDiscrete time otherwise)
      */
     Likelihood likelihoodFromNormalTime(double time, Timeseries!Ensemble ensembles) {
+        this.getTimeLikelihood(time, ensembles);
         Ensemble ensemble = new Ensemble(ensembles.members[$ - 1].members);
         double[] xLikelihood;
         double[] yLikelihood;
