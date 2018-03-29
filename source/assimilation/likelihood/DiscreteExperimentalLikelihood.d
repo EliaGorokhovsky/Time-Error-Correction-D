@@ -24,7 +24,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
     double minimumOffset; ///The most a true time can be less than the errant time; this is equal to the most an errant time can be more than the truth
     double maximumOffset; ///The most a true time can be more than the errant time; this is equal to the most an errant time can be less than the truth
     uint bins; ///The amount of bins into which to sort the time likelihood
-    int[] timeLikelihood;
+    double[] timeLikelihood;
 
     /**
      * Gets the mathematical expected value for time offset. This is the weighted average of the bin middles.
@@ -85,7 +85,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
      * Returns time likelihood normalized to a discrete PDF
      */
     @property double[] normalizedTimeLikelihood() {
-        double[] normalizedLikelihood = this.timeLikelihood.to!(double[]);
+        double[] normalizedLikelihood = this.timeLikelihood.to!(double[]).dup;
         immutable double sum = normalizedLikelihood.sum;
         foreach(ref component; normalizedLikelihood.parallel) {
             component /= sum;
@@ -111,12 +111,12 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
     }
 
     /**
-     * Returns discretely defined likelihood
+     * Returns likelihood
      */
     override Likelihood opCall(double time, Timeseries!Ensemble ensembles) {
-        //return this.likelihoodFromNormalTime(time, ensembles);
+        return this.likelihoodFromNormalTime(time, ensembles);
         //return this.likelihoodFromDiscreteTime(time, ensembles);
-        return this.normalLikelihood(time, ensembles);
+        //return this.normalLikelihood(time, ensembles);
     }
 
     /**
@@ -124,6 +124,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
      * TODO: Move into its own LikelihoodGetter
      */
     Likelihood normalLikelihood(double time, Timeseries!Ensemble ensembles) {
+        this.getTimeLikelihood(time, ensembles);
         Vector obs = this.observations.value(time);
         double expectedOffset = this.expectedTime;
         double timeDeviation = this.timeDeviation;
@@ -161,6 +162,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
      * Assumes time likelihood is Gaussian (data suggest it will be with current method; it is advised to use likelihoodFromDiscrete time otherwise)
      */
     Likelihood likelihoodFromNormalTime(double time, Timeseries!Ensemble ensembles) {
+        this.getTimeLikelihood(time, ensembles);
         Ensemble ensemble = new Ensemble(ensembles.members[$ - 1].members);
         double[] xLikelihood;
         double[] yLikelihood;
@@ -225,7 +227,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
         assert(this.observations.times.any!(a => a.approxEqual(time, 1e-6, 1e-6)), "Time not in observation times");
         ensemble = ensembles.value(time, this.integrator);
         assert(ensembles !is null);
-        int[] timeLikelihood = this.getTimeLikelihood(time, ensembles);
+        double[] timeLikelihood = this.getTimeLikelihood(time, ensembles);
         Vector[] observationTrajectory = this.getObservationTrajectory(time);
         assert(timeLikelihood.length == observationTrajectory.length, "timeLikelihood has " ~ timeLikelihood.length.to!string ~ " elements whereas observationTrajectory has " ~ observationTrajectory.length.to!string);
         //Apply likelihoods
@@ -257,7 +259,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
     /**
      * At a certain time, determines discretely defined likelihood in time
      */
-    int[] getTimeLikelihood(double time, Timeseries!Ensemble ensembles) {
+    double[] getTimeLikelihood(double time, Timeseries!Ensemble ensembles) {
         assert(this.observations.times.any!(a => a.approxEqual(time, 1e-6, 1e-6)), "Time not in observation times");
         Vector obs = this.observations.value(time);
         const double binWidth = (this.maximumOffset - this.minimumOffset) / this.bins;
@@ -266,7 +268,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
         //writeln("bin times ", binMiddles);
         //writeln("Ensemble mean ", ensembles.members[$-1].eMean);
         Vector[] binValues = binMiddles.map!(a => ensembles.meanSeries.value(a, this.integrator)).array; ///Value of trajectory at time of bin center
-        int[] binQuantities; 
+        double[] binQuantities; 
         foreach(i; 0..bins) {
             binQuantities ~= 0;
         }
@@ -276,15 +278,15 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
 
             //Option 1: Discrete binary
             //If within 3 standard deviations, use it
-            if(abs(distance.x) < 3 * this.stateError.x && abs(distance.y) < 3 * this.stateError.y && abs(distance.z) < 3 * this.stateError.z) {
+            /*if(abs(distance.x) < 3 * this.stateError.x && abs(distance.y) < 3 * this.stateError.y && abs(distance.z) < 3 * this.stateError.z) {
                 binQuantities[i] += 1;
-            }
+            }*/
 
             //Option 2: Smooth
             //Assume error is dimensionally independent, then find probability by multiplying the probabilities
-            /*binQuantities[i] += normalVal(distance.x, 0, this.stateError.x) 
+            binQuantities[i] += normalVal(distance.x, 0, this.stateError.x) 
                               * normalVal(distance.y, 0, this.stateError.y)
-                              * normalVal(distance.z, 0, this.stateError.z);*/
+                              * normalVal(distance.z, 0, this.stateError.z);
         }
         foreach(index, ref component; binQuantities.parallel) {
             this.timeLikelihood[index] += component;

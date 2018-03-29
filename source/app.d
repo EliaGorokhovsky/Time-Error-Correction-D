@@ -29,14 +29,14 @@ void run(double observationInterval, double timeError, Vector error) {
 	//Universal
 	Vector startState = Vector(1, 1, 1); ///The initial point of the truth
 	const double startTime = 0; ///The initial time with which to associate the initial point
-	const double endTime = 80; ///The time at which to stop the experiment
+	const double endTime = 100; ///The time at which to stop the experiment
 	const double dt = 0.01; ///The length of each step of the integrator
 	Lorenz63 system = new Lorenz63(); ///The dynamical system used as an environment for the experiment
 	RK4 integrator = new RK4(system); ///The integrator used to return points from previous points
 	//Getting observations
 	Vector actualError = error; ///The standard deviation of the Gaussian error in space
 	const double obsStartTime = 0; ///When to start observing
-	const double obsEndTime = 80; ///When to stop observing
+	const double obsEndTime = 100; ///When to stop observing
 	//Assimilation
 	Vector expectedError = error; ///The a priori expected standard deviation for Gaussian space error
 	const double ensembleStartTime = startTime; ///When to create the ensemble
@@ -47,7 +47,7 @@ void run(double observationInterval, double timeError, Vector error) {
 	const Vector ensembleDeviation = Vector(0.1, 0.1, 0.1); ///The standard deviation of the initial ensemble distribution
 	const int ensembleSize = 80;
 	EAKF controlAssimilator = new EAKF(); ///The assimilation method for the control
-	EAKF experimentalAssimilator = new EAKF(); ///The assimilation method for the treatment 
+	RHF experimentalAssimilator = new RHF(); ///The assimilation method for the treatment 
 	const double minimumOffset = -0.1; ///The first time that is a valid time for observation relative to reported time
 	const double maximumOffset = 0.1; ///The last time that is a valid time for observation relative to reported time
 	const uint bins = 20; ///The amount of different time intervals tested in experimental likelihood algorithm
@@ -79,7 +79,7 @@ void run(double observationInterval, double timeError, Vector error) {
 	);
 	treatment.standardLikelihood = new LikelihoodGetter(treatment.observations, expectedError);
 	treatment.getEnsembleTimeseries!true(
-		ensembleStartTime, ensembleEndTime, ensembledt, spinup, 50, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation)
+		ensembleStartTime, ensembleEndTime, ensembledt, spinup, 5, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation)
 	);
 	DiscreteExperimentalLikelihood treatmentLikelihood = cast(DiscreteExperimentalLikelihood) treatment.likelihoodGetter;
 	File("data/tests/timeLikelihoodSmoothTest.csv", "a").writeln(treatmentLikelihood.expectedTime, ",", treatmentLikelihood.timeDeviation, ",,", treatmentLikelihood.timeLikelihood);
@@ -88,7 +88,7 @@ void run(double observationInterval, double timeError, Vector error) {
 }
 
 void main() {
-	double[] observationIntervals = [0.1];
+	double[] observationIntervals = [0.5];
 	double[] timeErrors = [0.01];
 	double[] errors = [0.1];
 	uint trials = 1;
