@@ -24,7 +24,9 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
     double minimumOffset; ///The most a true time can be less than the errant time; this is equal to the most an errant time can be more than the truth
     double maximumOffset; ///The most a true time can be more than the errant time; this is equal to the most an errant time can be less than the truth
     uint bins; ///The amount of bins into which to sort the time likelihood
-    double[] timeLikelihood;
+    double[] timeLikelihood; ///Histogram of time likelihood
+    double timeOffset; ///The known offset in time; only use if testing knownErrorNormalLikelihood
+    double timeError; ///The known standard deviation of time error; ^^^
 
     /**
      * Gets the mathematical expected value for time offset. This is the weighted average of the bin middles.
@@ -97,7 +99,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
      * Constructs a likelihood getter with information about the experiment, as well as a priori knowledge of time offset and desired number of bins for time offset likelihood
      * Also integrates ensemble timeseries to the maximum offset in order to have values for the interval from minimum to maximum offset
      */
-    this(Timeseries!Vector observations, Vector stateError, Integrator integrator, double minimumOffset, double maximumOffset, uint bins) {
+    this(Timeseries!Vector observations, Vector stateError, Integrator integrator, double minimumOffset, double maximumOffset, uint bins, double timeOffset, double timeError) {
         super(observations, stateError);
         this.integrator = integrator;
         this.minimumOffset = minimumOffset;
@@ -108,6 +110,8 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
         }
         this.timeLikelihood[bins / 2 - 1] = 1;
         this.timeLikelihood[bins / 2] = 1;
+        this.timeOffset = timeOffset;
+        this.timeError = timeError;
     }
 
     /**
@@ -118,6 +122,39 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
         //return this.likelihoodFromNormalTime(time, ensembles); //Only works with RHF for now
         //return this.likelihoodFromDiscreteTime(time, ensembles); //Only works with RHF for now
         return this.normalLikelihood(time, ensembles); //Only works with EAKF for now
+        //return this.knownErrorNormalLikelihood(time, ensembles); //Only works with EAKF for now; requires minor changes to code for now
+    }
+
+    /** 
+     * Fast alternative to normalLikelihood if error is known
+     */
+    Likelihood knownErrorNormalLikelihood(double time, Timeseries!Ensemble ensembles) {
+        Vector obs = this.observations.value(time);
+        double[] xPseudoMeasurements;
+        double[] yPseudoMeasurements;
+        double[] zPseudoMeasurements;            
+        auto gen = Random(unpredictableSeed);
+        foreach(i; 0..100) {
+            auto newTime = NormalVariable!double(this.timeOffset, this.timeError);
+            Vector base = this.integrator.integrateTo(obs, newTime(gen), 1);
+            auto normalX = NormalVariable!double(base.x, this.stateError.x);
+            auto normalY = NormalVariable!double(base.y, this.stateError.y);
+            auto normalZ = NormalVariable!double(base.z, this.stateError.z);
+            xPseudoMeasurements ~= normalX(gen);
+            yPseudoMeasurements ~= normalY(gen);
+            zPseudoMeasurements ~= normalZ(gen);
+        }
+        Vector meanVector = Vector(
+            mean(xPseudoMeasurements),
+            mean(yPseudoMeasurements),
+            mean(zPseudoMeasurements)
+        );
+        Vector deviationVector = Vector(
+            standardDeviation(xPseudoMeasurements),
+            standardDeviation(yPseudoMeasurements),
+            standardDeviation(zPseudoMeasurements)  
+        );
+        return new Likelihood(meanVector, deviationVector);
     }
 
     /**
@@ -316,15 +353,15 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
 
             //Option 1: Discrete binary
             //If within 3 standard deviations, use it
-            if(abs(distance.x) < 3 * this.stateError.x && abs(distance.y) < 3 * this.stateError.y && abs(distance.z) < 3 * this.stateError.z) {
+            /*if(abs(distance.x) < 3 * this.stateError.x && abs(distance.y) < 3 * this.stateError.y && abs(distance.z) < 3 * this.stateError.z) {
                 binQuantities[i] += 1;
-            }
+            }*/
 
             //Option 2: Smooth
             //Assume error is dimensionally independent, then find probability by multiplying the probabilities
-            /*binQuantities[i] += normalVal(distance.x, 0, this.stateError.x) 
+            binQuantities[i] += normalVal(distance.x, 0, this.stateError.x) 
                               * normalVal(distance.y, 0, this.stateError.y)
-                              * normalVal(distance.z, 0, this.stateError.z);*/
+                              * normalVal(distance.z, 0, this.stateError.z);
         }
         foreach(index, ref component; binQuantities.parallel) {
             this.timeLikelihood[index] += component;
