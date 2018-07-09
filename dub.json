@@ -5,8 +5,7 @@
 	],
 	"dependencies": {
 		"dstats": "~>1.0.3",
-		"mir-random": "~>0.3.1",
-		"ggplotd": "~>0.4.4"
+		"mir-random": "~>0.3.1"
 	},
 	"description": "A project to correct misreported observation times in data assimilation",
 	"copyright": "Copyright © 2017, Elia Gorokhovsky",

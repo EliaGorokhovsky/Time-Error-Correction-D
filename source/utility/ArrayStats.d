@@ -7,8 +7,10 @@ import std.math;
 /**
  * Returns the mean of a dataset
  */
-double mean(double[] dataset) {
-    return dataset.sum / dataset.length;
+deprecated {
+    double amean(double[] dataset) {
+        return dataset.sum / dataset.length;
+    }
 }
 
 /**

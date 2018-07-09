@@ -19,6 +19,7 @@ import experiment.Experiment;
 import experiment.error.GaussianError;
 import experiment.error.GaussianTimeError;
 import experiment.error.UniformTimeError;
+import integrators.Integrator;
 import integrators.RK4;
 import systems.Circle;
 import systems.System;
@@ -82,23 +83,23 @@ void run(double observationInterval, double timeError, Vector error) {
 		ensembleStartTime, ensembleEndTime, ensembledt, spinup, 5, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation)
 	);
 	DiscreteExperimentalLikelihood treatmentLikelihood = cast(DiscreteExperimentalLikelihood) treatment.likelihoodGetter;
-	File("data/tests/timeLikelihoodSmoothTest.csv", "a").writeln(treatmentLikelihood.expectedTime, ",", treatmentLikelihood.timeDeviation, ",,", treatmentLikelihood.timeLikelihood);
+	//File("data/tests/Test1.csv", "a").writeln(treatmentLikelihood.expectedTime, ",", treatmentLikelihood.timeDeviation, ",,", treatmentLikelihood.timeLikelihood);
 	immutable double treatmentRMSE = RMSE(treatment.ensembleSeries, treatment.truth);
-	File("data/dataCollection/noInflationData3.csv", "a").writeln(observationInterval, ",", timeError, ",", controlRMSE, ",", treatmentRMSE);
+	File("data/dataCollection/Test1.csv", "a").writeln(observationInterval, ",", timeError, ",", controlRMSE, ",", treatmentRMSE);
 	writeln("Treatment RMSE is " ~ treatmentRMSE.to!string);
 }
 
 void main() {
-	double[] observationIntervals = [0.5, 1];
+	double[] observationIntervals = [0.1];
 	double[] timeErrors = [];
-	foreach(i; 0..15) {
-		timeErrors ~= i * 0.001;
+	foreach(i; 0..150) {
+		timeErrors ~= i * 0.0001;
 	}
 	double[] errors = [0.1];
-	uint trials = 5;
+	uint trials = 20;
 	//TODO: Make this clearer
-	File("data/dataCollection/noInflationData3.csv", "a").writeln("Run time: 80, state error: 0.1");
-	File("data/dataCollection/noInflationData3.csv", "a").writeln("Observation interval, time error, control RMSE, treatment RMSE");	
+	File("data/sandbox/Test1.csv", "a").writeln("Run time: 80, state error: 0.1");
+	File("data/sandbox/Test1.csv", "a").writeln("Observation interval, time error, control RMSE, treatment RMSE");	
 	foreach(observationInterval; observationIntervals) {
 		foreach(timeError; timeErrors) {
 			foreach(error; errors) {

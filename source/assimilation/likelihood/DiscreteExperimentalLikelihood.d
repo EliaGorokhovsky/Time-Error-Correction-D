@@ -99,7 +99,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
      * Constructs a likelihood getter with information about the experiment, as well as a priori knowledge of time offset and desired number of bins for time offset likelihood
      * Also integrates ensemble timeseries to the maximum offset in order to have values for the interval from minimum to maximum offset
      */
-    this(Timeseries!Vector observations, Vector stateError, Integrator integrator, double minimumOffset, double maximumOffset, uint bins, double timeOffset, double timeError) {
+    this(Timeseries!Vector observations, Vector stateError, Integrator integrator, double minimumOffset, double maximumOffset, uint bins, double timeOffset = 0, double timeError = 0) {
         super(observations, stateError);
         this.integrator = integrator;
         this.minimumOffset = minimumOffset;
@@ -145,9 +145,9 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
             zPseudoMeasurements ~= normalZ(gen);
         }
         Vector meanVector = Vector(
-            mean(xPseudoMeasurements),
-            mean(yPseudoMeasurements),
-            mean(zPseudoMeasurements)
+            xPseudoMeasurements.mean,
+            yPseudoMeasurements.mean,
+            zPseudoMeasurements.mean
         );
         Vector deviationVector = Vector(
             standardDeviation(xPseudoMeasurements),
@@ -200,9 +200,9 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
             zPseudoMeasurements ~= normalZ(gen);
         }
         Vector meanVector = Vector(
-            mean(xPseudoMeasurements),
-            mean(yPseudoMeasurements),
-            mean(zPseudoMeasurements)
+            xPseudoMeasurements.mean,
+            yPseudoMeasurements.mean,
+            zPseudoMeasurements.mean
         );
         Vector deviationVector = Vector(
             standardDeviation(xPseudoMeasurements),
