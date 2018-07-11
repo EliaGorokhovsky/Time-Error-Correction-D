@@ -15,9 +15,13 @@ import data.Ensemble;
 import data.Timeseries;
 import data.Vector;
 import integrators.Integrator;
+import math.Matrix;
 import utility.ArrayStats;
 import utility.Normal;
 
+/**
+ * Gets likelihood inferentially using Bayes' rule
+ */
 class DiscreteExperimentalLikelihood : LikelihoodGetter {
 
     Integrator integrator;

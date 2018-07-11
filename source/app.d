@@ -46,7 +46,7 @@ void run(double observationInterval, double timeError, Vector error) {
 	const double spinup = 0.1; ///The amount of time the ensemble is run before beginning to assimilate
 	const Vector ensembleGenesis = Vector(1, 1, 1); ///The mean of the initial ensemble distribution
 	const Vector ensembleDeviation = Vector(0.1, 0.1, 0.1); ///The standard deviation of the initial ensemble distribution
-	const int ensembleSize = 80;
+	const int ensembleSize = 20;
 	EAKF controlAssimilator = new EAKF(); ///The assimilation method for the control
 	EAKF experimentalAssimilator = new EAKF(); ///The assimilation method for the treatment 
 	const double minimumOffset = -0.1; ///The first time that is a valid time for observation relative to reported time
@@ -66,9 +66,9 @@ void run(double observationInterval, double timeError, Vector error) {
 		ensembleStartTime, ensembleEndTime, ensembledt, spinup, 0, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation)
 	);
 	immutable double controlRMSE = RMSE(control.ensembleSeries, control.truth);
-	writeln("Control RMSE is ", controlRMSE);
+	writeln("Control RMSE for time error ", timeError, " is ", controlRMSE);
 
-	writeln("Experiment:");
+	/*writeln("Experiment:");
 	Experiment treatment = new Experiment(integrator, experimentalAssimilator);
 	treatment.getTruth(startState, startTime, endTime, dt);
 	treatment.setError(new GaussianTimeError(timeError, actualError, treatment.truth, integrator));
@@ -82,11 +82,12 @@ void run(double observationInterval, double timeError, Vector error) {
 	treatment.getEnsembleTimeseries!true(
 		ensembleStartTime, ensembleEndTime, ensembledt, spinup, 5, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation)
 	);
-	DiscreteExperimentalLikelihood treatmentLikelihood = cast(DiscreteExperimentalLikelihood) treatment.likelihoodGetter;
+	DiscreteExperimentalLikelihood treatmentLikelihood = cast(DiscreteExperimentalLikelihood) treatment.likelihoodGetter;*/
 	//File("data/tests/Test1.csv", "a").writeln(treatmentLikelihood.expectedTime, ",", treatmentLikelihood.timeDeviation, ",,", treatmentLikelihood.timeLikelihood);
-	immutable double treatmentRMSE = RMSE(treatment.ensembleSeries, treatment.truth);
-	File("data/dataCollection/Test1.csv", "a").writeln(observationInterval, ",", timeError, ",", controlRMSE, ",", treatmentRMSE);
-	writeln("Treatment RMSE is " ~ treatmentRMSE.to!string);
+	//immutable double treatmentRMSE = RMSE(treatment.ensembleSeries, treatment.truth);
+	//File("data/dataCollection/Test2.csv", "a").writeln(observationInterval, ",", timeError, ",", controlRMSE, ",", treatmentRMSE);
+	File("data/dataCollection/Test2.csv", "a").writeln(observationInterval, ",", timeError, ",", controlRMSE);
+	//writeln("Treatment RMSE is " ~ treatmentRMSE.to!string);
 }
 
 void main() {
@@ -98,8 +99,8 @@ void main() {
 	double[] errors = [0.1];
 	uint trials = 20;
 	//TODO: Make this clearer
-	File("data/sandbox/Test1.csv", "a").writeln("Run time: 80, state error: 0.1");
-	File("data/sandbox/Test1.csv", "a").writeln("Observation interval, time error, control RMSE, treatment RMSE");	
+	File("data/sandbox/Test2.csv", "a").writeln("Run time: 80, state error: 0.1");
+	File("data/sandbox/Test2.csv", "a").writeln("Observation interval, time error, control RMSE, treatment RMSE");	
 	foreach(observationInterval; observationIntervals) {
 		foreach(timeError; timeErrors) {
 			foreach(error; errors) {

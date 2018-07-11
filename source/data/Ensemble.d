@@ -171,8 +171,9 @@ class Ensemble {
      * Handles scaling the ensemble without creating a new one
      */
     void opOpAssign(string op)(double scalar) {
-        static if (op == "*=") this.members = this.members.map!(a => this.eMean + (a - this.eMean) * scalar).array;
-        else static if (op == "/=") this.members = this.members.map!(a => this.eMean + (a - this.eMean) / scalar).array;
+        double average = this.eMean;
+        static if (op == "*=") this.members = this.members.map!(a => average + (a - average) * scalar).array;
+        else static if (op == "/=") this.members = this.members.map!(a => average + (a - average) / scalar).array;
     }
 
     /**
