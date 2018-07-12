@@ -54,7 +54,7 @@ double multivariateNormalVal(uint dimensions)
 /**
  * Trivariate normal pdf for convenience of use with L63
  */
-double trivariateNormalVal(double[3] val, double[3] mu = [0, 0, 0], Matrix!(double, 3, 3) sigma = new Matrix!(double, 3, 3)(0)) {
+double trivariateNormalVal(double[] val, double[] mu = [0, 0, 0], Matrix!(double, 3, 3) sigma = new Matrix!(double, 3, 3)(0)) {
     return multivariateNormalVal!(3)(new Vector!(double, 3)(val), new Vector!(double, 3)(mu), sigma);
 }
 

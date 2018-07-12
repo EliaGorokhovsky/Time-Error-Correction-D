@@ -336,24 +336,33 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
     }
 
     /**
-     * At a certain time, determines discretely defined likelihood in time
+     * Gets time likelihood, accounting for ensemble variance
      */
     double[] getTimeLikelihood(double time, Timeseries!Ensemble ensembles) {
+        //Ensure that the observation time is close enough to one that we know
         assert(this.observations.times.any!(a => a.approxEqual(time, 1e-6, 1e-6)), "Time not in observation times");
+        //Get observation at time
         Vector obs = this.observations.value(time);
+        //Split the interval into bins; TODO: Perhaps make this a property
         const double binWidth = (this.maximumOffset - this.minimumOffset) / this.bins;
+        //Get the times in the centers of each bin
         double[] binMiddles = iota(time + this.minimumOffset + binWidth / 2, time + this.maximumOffset, binWidth).array;
-        //import std.stdio;
-        //writeln("bin times ", binMiddles);
-        //writeln("Ensemble mean ", ensembles.members[$-1].eMean);
-        Vector[] binValues = binMiddles.map!(a => ensembles.meanSeries.value(a, this.integrator)).array; ///Value of trajectory at time of bin center
+        //Get the system state at the middle of each bin
+        //Ensembles passed into function should already have been advanced to the end of the interval
+        Vector[] binValues = binMiddles.map!(a => ensembles.meanSeries.value(a, this.integrator)).array;
+        //Get the values of the ensemble points at the bin middles;
+        //Might be faster to do this, then compute means from ensembles
+        Ensemble[] ensembleValues = binMiddles.map!(a => ensembles.value(a, this.integrator)).array;
+        //Initialize an array to store time likelihood - uniformly zero for now
         double[] binQuantities; 
-        foreach(i; 0..bins) {
+        //Can maybe do this faster or more elegantly
+        foreach(i; 0..this.bins) {
             binQuantities ~= 0;
         }
-        Vector distance;
         foreach(i; 0..binMiddles.length) {
-            distance = binValues[i] - obs;
+            Vector distance = binValues[i] - obs;
+            //Be careful; options 1 and 2 are biased because they do not account for ensemble variance
+            //However, they are computationally faster since option 3 involves matrix inversion and multiplication
 
             //Option 1: Discrete binary
             //If within 3 standard deviations, use it
@@ -363,10 +372,28 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
 
             //Option 2: Smooth
             //Assume error is dimensionally independent, then find probability by multiplying the probabilities
-            binQuantities[i] += normalVal(distance.x, 0, this.stateError.x) 
+            /*binQuantities[i] = normalVal(distance.x, 0, this.stateError.x) 
                               * normalVal(distance.y, 0, this.stateError.y)
-                              * normalVal(distance.z, 0, this.stateError.z);
+                              * normalVal(distance.z, 0, this.stateError.z);*/
+
+            //Option 3: Smooth multivariate
+            //Assume error is dimensionally independent, then find probability
+            //By finding the value of a multivariate (in this case trivariate) normal pdf at the value of distance
+            //The observation error covariance is 0 outside the diagonal because we assume obs error is dimensionally independent
+            Matrix!(double, 3, 3) obsErrorCovariance = new Matrix!(double, 3, 3)([
+                                                                                [this.stateError.x, 0, 0],
+                                                                                [0, this.stateError.y, 0],
+                                                                                [0, 0, this.stateError.z]
+                                                                                ]);
+            //The covariance matrix of the ensemble has the variance across the diagonals and the covariance everywhere else
+            Matrix!(double, 3, 3) ensembleCovariance = covariance!(3, 1)([ensembleValues[i].xValues, ensembleValues[i].yValues, ensembleValues[i].zValues]);
+            //The value of the probability is given by the trivariate normal PDF at the observation with mean ensemble mean
+            //and covariance the sum of the ensemble covariance and the obs error covariance
+            //This is the probability of taking the observation if the truth is taken from multivariate normal distribution
+            //that is represented by the ensemble
+            binQuantities[i] = trivariateNormalVal(obs.handle, binValues[i].handle, obsErrorCovariance + ensembleCovariance);
         }
+        //In parallel, update the time likelihood with the new inferred likelihood
         foreach(index, ref component; binQuantities.parallel) {
             this.timeLikelihood[index] += component;
         }

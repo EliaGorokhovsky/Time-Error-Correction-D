@@ -33,15 +33,20 @@ double standardDeviation(int ddof = 0)(double[] dataset) {
 /**
  * Computes the covariance matrix of a set of data, where dim is the number of dimensions and ddof being delta degrees of freedom
  */
-Matrix!(double, dim, dim) covariance(uint dim, uint datasetSize, int ddof = 0)(double[][] data) {
+Matrix!(double, dim, dim) covariance(uint dim, int ddof = 0)(double[][] data) {
     Matrix!(double, dim, dim) covarianceMatrix = new Matrix!(double, dim, dim)();
     foreach (i; 0..dim) {
         data[i][] -= data[i][].mean;
     }
     foreach (i; 0..dim) {
         foreach(j; 0..dim) {
+            assert(data[i].length == data[j].length, "Covariance: Dataset lengths unequal");
             //Dot product of the datasets gives covariance; covariance with itself is variance
-            covarianceMatrix[i][j] = dot!(double, datasetSize)(new Vector!(double, datasetSize)(data[i]), new Vector!(double, datasetSize)(data[j])) / (datasetSize - ddof);
+            double productSum = 0;
+            foreach (k; 0..data[i].length) {
+                productSum += data[i][k] * data[j][k];
+            }
+            covarianceMatrix[i][j] = productSum / (data[i].length - ddof);
         }
     }
     return covarianceMatrix;
@@ -51,5 +56,5 @@ unittest {
     import std.stdio;
 
     writeln("\nUNITTEST: ArrayStats");
-    writeln("Covariance matrix of [[1,2,3],[4,5,6],[7,8,9] is ", covariance!(3, 3, 1)([[1,2,3],[4,5,6],[7,8,9]]));
+    writeln("Covariance matrix of [[1,2,3],[4,5,6],[7,8,9] is ", covariance!(3, 1)([[1,2,3],[4,5,6],[7,8,9]]));
 }
