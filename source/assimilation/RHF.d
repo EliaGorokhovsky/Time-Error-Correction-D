@@ -106,10 +106,10 @@ class RHF : Assimilator {
         }
         //Compute partial Gaussian kernels for tails of prior
         immutable double distanceForUnitSpread = -1 * weightedNormInverse(1, 0, 1, 1.0 / (priorValues.length + 1));
-        immutable double leftMean = sortedPrior[0] + distanceForUnitSpread * standardDeviation(sortedPrior, 1);
-        immutable double leftStandardDeviation = standardDeviation(sortedPrior, 1);
-        immutable double rightMean = sortedPrior[$ - 1] - distanceForUnitSpread * standardDeviation(sortedPrior, 1);
-        immutable double rightStandardDeviation = standardDeviation(sortedPrior, 1); 
+        immutable double leftMean = sortedPrior[0] + distanceForUnitSpread * standardDeviation!1(sortedPrior);
+        immutable double leftStandardDeviation = standardDeviation!1(sortedPrior);
+        immutable double rightMean = sortedPrior[$ - 1] - distanceForUnitSpread * standardDeviation!1(sortedPrior);
+        immutable double rightStandardDeviation = standardDeviation!1(sortedPrior); 
         //Assume flat tails in likelihood. TODO: Allow for Gaussian tails (should only be relevant for nearly Gaussian likelihoods.)
         immutable double leftProductWeight = likelihood[indices[0]];    
         immutable double rightProductWeight = likelihood[indices[$ - 1]];

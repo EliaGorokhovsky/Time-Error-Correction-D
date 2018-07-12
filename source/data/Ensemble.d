@@ -84,9 +84,9 @@ class Ensemble {
      */
     @property Vector eVariance() {
         return Vector(
-            variance(this.xValues, 1),
-            variance(this.yValues, 1),
-            variance(this.zValues, 1)
+            variance!1(this.xValues),
+            variance!1(this.yValues),
+            variance!1(this.zValues)
         );
     }
 
@@ -95,9 +95,9 @@ class Ensemble {
      */
     @property Vector eStandardDeviation() {
         return Vector(
-            standardDeviation(this.xValues, 1),
-            standardDeviation(this.yValues, 1),
-            standardDeviation(this.zValues, 1)
+            standardDeviation!1(this.xValues),
+            standardDeviation!1(this.yValues),
+            standardDeviation!1(this.zValues)
         );
     }
 
@@ -171,7 +171,7 @@ class Ensemble {
      * Handles scaling the ensemble without creating a new one
      */
     void opOpAssign(string op)(double scalar) {
-        double average = this.eMean;
+        Vector average = this.eMean;
         static if (op == "*=") this.members = this.members.map!(a => average + (a - average) * scalar).array;
         else static if (op == "/=") this.members = this.members.map!(a => average + (a - average) / scalar).array;
     }

@@ -2,6 +2,7 @@ module utility.Normal;
 
 import std.math;
 import std.mathspecial;
+import math;
 
 /**
  * Find x such that the CDF of a normal distribution with certain mean and sd multiplied by alpha is p
@@ -32,7 +33,29 @@ double normalIntegral(double val, double mu = 0, double sigma = 1) {
  *   sqrt(2pi*sigma^2)
  */
 double normalVal(double val, double mu = 0, double sigma = 1) {
-    return E.pow(- (val - mu).pow(2) / (2 * sigma * sigma)) / sqrt(2 * PI * sigma * sigma);
+    return exp(- (val - mu).pow(2) / (2 * sigma * sigma)) / sqrt(2 * PI * sigma * sigma);
+}
+
+/**
+ * Returns the value of the multivariate normal distribution probability density function at a point
+ * mu is mean vector, and sigma is covariance matrix
+ */
+double multivariateNormalVal(uint dimensions)
+                            (Vector!(double, dimensions) val, 
+                            Vector!(double, dimensions) mu = new Vector!(double, dimensions)(0),
+                            Matrix!(double, dimensions, dimensions) sigma = new Matrix!(double, dimensions, dimensions)) {
+    return (
+        (1 / ((2 * PI).pow(dimensions / 2.0) * sqrt(sigma.determinant)))
+        * exp(-0.5 * dot!(double, dimensions)(sigma.inverse * (val - mu), val - mu)
+        )
+    );
+}
+
+/**
+ * Trivariate normal pdf for convenience of use with L63
+ */
+double trivariateNormalVal(double[3] val, double[3] mu = [0, 0, 0], Matrix!(double, 3, 3) sigma = new Matrix!(double, 3, 3)(0)) {
+    return multivariateNormalVal!(3)(new Vector!(double, 3)(val), new Vector!(double, 3)(mu), sigma);
 }
 
 unittest {
@@ -42,5 +65,5 @@ unittest {
     writeln("\nUNITTEST: Normal");
     writeln("Matplotlib returns normpdf:\n0,0,1 => 0.3989422804014327\n1,0,1 => 0.24197072451914337\n-1,1,2 => 0.12098536225957168");
     writeln("normalVal returns normalVal:\n0,0,1 => ", normalVal(0, 0, 1), "\n1,0,1 => ", normalVal(1, 0, 1), "\n-1,1,2 => ", normalVal(-1, 1, 2));
-
+    writeln("Multivariate normal returns: \n <0>,<0>,[1] => ", multivariateNormalVal(new Vector!(double, 1)(0), new Vector!(double, 1)(0), new Matrix!(double, 1, 1)([[1]])));
 }

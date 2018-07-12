@@ -154,9 +154,9 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
             zPseudoMeasurements.mean
         );
         Vector deviationVector = Vector(
-            standardDeviation(xPseudoMeasurements),
-            standardDeviation(yPseudoMeasurements),
-            standardDeviation(zPseudoMeasurements)  
+            standardDeviation!1(xPseudoMeasurements),
+            standardDeviation!1(yPseudoMeasurements),
+            standardDeviation!1(zPseudoMeasurements)  
         );
         return new Likelihood(meanVector, deviationVector);
     }
@@ -209,9 +209,9 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
             zPseudoMeasurements.mean
         );
         Vector deviationVector = Vector(
-            standardDeviation(xPseudoMeasurements),
-            standardDeviation(yPseudoMeasurements),
-            standardDeviation(zPseudoMeasurements)  
+            standardDeviation!1(xPseudoMeasurements),
+            standardDeviation!1(yPseudoMeasurements),
+            standardDeviation!1(zPseudoMeasurements)  
         );
         return new Likelihood(meanVector, deviationVector);
     }

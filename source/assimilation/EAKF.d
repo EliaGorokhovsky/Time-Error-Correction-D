@@ -101,10 +101,10 @@ class EAKF : Assimilator {
     double[] getObservationIncrements(double[] priorValues, double posteriorMean, double posteriorSpread) {
         double meanDifference = posteriorMean - mean(priorValues);
         double spreadRatio;
-        if (standardDeviation(priorValues) == posteriorSpread) {
+        if (standardDeviation!1(priorValues) == posteriorSpread) {
             spreadRatio = 1;
         } else {
-            spreadRatio = posteriorSpread / standardDeviation(priorValues);
+            spreadRatio = posteriorSpread / standardDeviation!1(priorValues);
         }
         return priorValues.map!(
             //linear shift and stretch to equate prior distribution to posterior      
