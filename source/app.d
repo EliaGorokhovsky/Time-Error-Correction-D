@@ -25,7 +25,7 @@ import systems.Circle;
 import systems.System;
 import systems.Lorenz63;
 
-void run(double observationInterval, double timeError, Vector error) {
+void run(double observationInterval, double timeError, Vector error, Random gen) {
 	//Declare experiment parameters
 	//Universal
 	Vector startState = Vector(1, 1, 1); ///The initial point of the truth
@@ -58,54 +58,54 @@ void run(double observationInterval, double timeError, Vector error) {
 	//Get truth
 	control.getTruth(startState, startTime, endTime, dt);
 	//Get observations
-	control.setError(new GaussianTimeError(timeError, actualError, control.truth, integrator));
+	control.setError(new GaussianTimeError(timeError, actualError, control.truth, integrator, &gen));
 	control.getObservations(obsStartTime, obsEndTime, observationInterval);
 	//Do assimilation
 	control.setLikelihood(new LikelihoodGetter(control.observations, expectedError));
 	control.getEnsembleTimeseries!false(
-		ensembleStartTime, ensembleEndTime, ensembledt, spinup, 0, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation)
+		ensembleStartTime, ensembleEndTime, ensembledt, spinup, 0, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation, &gen)
 	);
 	immutable double controlRMSE = RMSE(control.ensembleSeries, control.truth);
 	writeln("Control RMSE for time error ", timeError, " is ", controlRMSE);
 
-	/*writeln("Experiment:");
+	writeln("Experiment:");
 	Experiment treatment = new Experiment(integrator, experimentalAssimilator);
 	treatment.getTruth(startState, startTime, endTime, dt);
-	treatment.setError(new GaussianTimeError(timeError, actualError, treatment.truth, integrator));
+	treatment.setError(new GaussianTimeError(timeError, actualError, treatment.truth, integrator, &gen));
 	treatment.getObservations(obsStartTime, obsEndTime, observationInterval);
 	treatment.setLikelihood(
 		new DiscreteExperimentalLikelihood(
-			treatment.observations, expectedError, integrator, minimumOffset, maximumOffset, bins
+			treatment.observations, expectedError, integrator, minimumOffset, maximumOffset, bins, &gen
 		)
 	);
 	treatment.standardLikelihood = new LikelihoodGetter(treatment.observations, expectedError);
 	treatment.getEnsembleTimeseries!true(
-		ensembleStartTime, ensembleEndTime, ensembledt, spinup, 5, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation)
+		ensembleStartTime, ensembleEndTime, ensembledt, spinup, 5, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation, &gen)
 	);
-	DiscreteExperimentalLikelihood treatmentLikelihood = cast(DiscreteExperimentalLikelihood) treatment.likelihoodGetter;*/
+	//DiscreteExperimentalLikelihood treatmentLikelihood = cast(DiscreteExperimentalLikelihood) treatment.likelihoodGetter;
 	//File("data/tests/Test1.csv", "a").writeln(treatmentLikelihood.expectedTime, ",", treatmentLikelihood.timeDeviation, ",,", treatmentLikelihood.timeLikelihood);
-	//immutable double treatmentRMSE = RMSE(treatment.ensembleSeries, treatment.truth);
-	//File("data/dataCollection/Test2.csv", "a").writeln(observationInterval, ",", timeError, ",", controlRMSE, ",", treatmentRMSE);
-	File("data/dataCollection/Test2.csv", "a").writeln(observationInterval, ",", timeError, ",", controlRMSE);
-	//writeln("Treatment RMSE is " ~ treatmentRMSE.to!string);
+	immutable double treatmentRMSE = RMSE(treatment.ensembleSeries, treatment.truth);
+	File("data/dataCollection/Covar1.csv", "a").writeln(observationInterval, ",", timeError, ",", controlRMSE, ",", treatmentRMSE);
+	//File("data/dataCollection/Test2.csv", "a").writeln(observationInterval, ",", timeError, ",", controlRMSE);
+	writeln("Treatment RMSE is " ~ treatmentRMSE.to!string);
 }
 
 void main() {
-	double[] observationIntervals = [0.1];
+	double[] observationIntervals = [0.1, 0.5, 1];
 	double[] timeErrors = [];
-	foreach(i; 0..150) {
-		timeErrors ~= i * 0.0001;
+	foreach(i; 0..15) {
+		timeErrors ~= i * 0.001;
 	}
 	double[] errors = [0.1];
-	uint trials = 20;
+	uint trials = 10;
 	//TODO: Make this clearer
-	File("data/sandbox/Test2.csv", "a").writeln("Run time: 80, state error: 0.1");
-	File("data/sandbox/Test2.csv", "a").writeln("Observation interval, time error, control RMSE, treatment RMSE");	
+	File("data/dataCollection/Covar1.csv", "a").writeln("Run time: 80, state error: 0.1");
+	File("data/dataCollection/Covar1.csv", "a").writeln("Observation interval, time error, control RMSE, treatment RMSE");	
 	foreach(observationInterval; observationIntervals) {
 		foreach(timeError; timeErrors) {
 			foreach(error; errors) {
 				foreach(i; 0..trials) {
-					run(observationInterval, timeError, Vector(error, error, error));
+					run(observationInterval, timeError, Vector(error, error, error), Random(unpredictableSeed));
 				}
 			}
 		}

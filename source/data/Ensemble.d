@@ -112,13 +112,12 @@ class Ensemble {
      * Initializer for an ensemble
      * Generates ensemble with independent Gaussian variation from a base point 
      */
-    this(Vector base, int size, Vector error) {
-        auto gen = Random(unpredictableSeed);
+    this(Vector base, int size, Vector error, Random* gen) {
         auto normalX = NormalVariable!double(base.x, error.x);
         auto normalY = NormalVariable!double(base.y, error.y);
         auto normalZ = NormalVariable!double(base.z, error.z);
         foreach(i; 0..size) {
-            this.members ~= Vector(normalX(gen), normalY(gen), normalZ(gen));
+            this.members ~= Vector(normalX(*gen), normalY(*gen), normalZ(*gen));
         }
     }
 

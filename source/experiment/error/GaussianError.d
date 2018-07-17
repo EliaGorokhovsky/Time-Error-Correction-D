@@ -16,11 +16,13 @@ class GaussianError : ErrorGenerator {
     Vector error;
     Integrator integrator;
     Timeseries!Vector truth;
+    Random* gen;
 
-    this(Vector error, Timeseries!Vector truth, Integrator integrator) {
+    this(Vector error, Timeseries!Vector truth, Integrator integrator, Random* gen) {
         this.error = error;
         this.truth = truth;
         this.integrator = integrator;
+        this.gen = gen;
     }
 
     /**
@@ -28,11 +30,10 @@ class GaussianError : ErrorGenerator {
      */
     override Vector generate(double time) {
         Vector base = this.truth.value(time, this.integrator);
-        auto gen = Random(unpredictableSeed);
         auto normalX = NormalVariable!double(base.x, this.error.x);
         auto normalY = NormalVariable!double(base.y, this.error.y);
         auto normalZ = NormalVariable!double(base.z, this.error.z);
-        return Vector(normalX(gen), normalY(gen), normalZ(gen));
+        return Vector(normalX(*this.gen), normalY(*this.gen), normalZ(*this.gen));
     }
 
 }

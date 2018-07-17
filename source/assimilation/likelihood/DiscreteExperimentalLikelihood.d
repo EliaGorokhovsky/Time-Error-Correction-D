@@ -31,6 +31,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
     double[] timeLikelihood; ///Histogram of time likelihood
     double timeOffset; ///The known offset in time; only use if testing knownErrorNormalLikelihood
     double timeError; ///The known standard deviation of time error; ^^^
+    Random* gen; ///The random number generator used for the random generation; this is passed in so we can control the seed globally
 
     /**
      * Gets the mathematical expected value for time offset. This is the weighted average of the bin middles.
@@ -122,7 +123,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
      * Constructs a likelihood getter with information about the experiment, as well as a priori knowledge of time offset and desired number of bins for time offset likelihood
      * Also integrates ensemble timeseries to the maximum offset in order to have values for the interval from minimum to maximum offset
      */
-    this(Timeseries!Vector observations, Vector stateError, Integrator integrator, double minimumOffset, double maximumOffset, uint bins, double timeOffset = 0, double timeError = 0) {
+    this(Timeseries!Vector observations, Vector stateError, Integrator integrator, double minimumOffset, double maximumOffset, uint bins, Random* gen, double timeOffset = 0, double timeError = 0) {
         super(observations, stateError);
         this.integrator = integrator;
         this.minimumOffset = minimumOffset;
@@ -148,14 +149,15 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
             this.timeLikelihood[0] = 1;
         //If 0 falls between two bins (i.e. minimumOffset is an integer multiple of binWidth) then assign probability to both
         } else if((-this.minimumOffset / binWidth).to!int.to!double.approxEqual(-this.minimumOffset / binWidth)) {
-            this.timeLikelihood[cast(int)(clamp(-this.minimumOffset / binWidth, 0, this.bins - 1)] = 1;
-            this.timeLikelihood[cast(int)(clamp(-this.minimumOffset / binWidth, 0, this.bins - 1) - 1] = 1;
+            this.timeLikelihood[cast(int)(clamp(-this.minimumOffset / binWidth, 0, this.bins - 1))] = 1;
+            this.timeLikelihood[cast(int)(clamp(-this.minimumOffset / binWidth, 0, this.bins - 1)) - 1] = 1;
         //Otherwise assign probability to the bin that 0 falls within
         } else {
-            this.timeLikelihood[cast(int)(clamp(-this.minimumOffset / binWidth, 0, this.bins - 1)] = 1;
+            this.timeLikelihood[cast(int)(clamp(-this.minimumOffset / binWidth, 0, this.bins - 1))] = 1;
         }
         this.timeOffset = timeOffset;
         this.timeError = timeError;
+        this.gen = gen;
     }
 
     /**
@@ -195,23 +197,21 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
         double[] xPseudoMeasurements;
         double[] yPseudoMeasurements;
         double[] zPseudoMeasurements;
-        //Initialize a Mersenne Twister            
-        auto gen = Random(unpredictableSeed);
         //Do this a specified number of times: create a pseudo observation
         foreach(i; 0..kernels) {
             //Find a new time for the measurement
             auto newTime = NormalVariable!double(this.timeOffset, this.timeError);
             //Find a trajectory through the observation, then find the value on that trajectory
             //at the observation time (the pseudo-truth)
-            Vector base = this.integrator.integrateTo(obs, newTime(gen), 1);
+            Vector base = this.integrator.integrateTo(obs, newTime(*this.gen), 1);
             //Generate observations by perturbation from the pseudo-truth
             auto normalX = NormalVariable!double(base.x, this.stateError.x);
             auto normalY = NormalVariable!double(base.y, this.stateError.y);
             auto normalZ = NormalVariable!double(base.z, this.stateError.z);
             //Add the measurements to the lists
-            xPseudoMeasurements ~= normalX(gen);
-            yPseudoMeasurements ~= normalY(gen);
-            zPseudoMeasurements ~= normalZ(gen);
+            xPseudoMeasurements ~= normalX(*this.gen);
+            yPseudoMeasurements ~= normalY(*this.gen);
+            zPseudoMeasurements ~= normalZ(*this.gen);
         }
         //Find the mean of the pseudo-observations
         Vector meanVector = Vector(
@@ -269,23 +269,21 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
         double[] xPseudoMeasurements;
         double[] yPseudoMeasurements;
         double[] zPseudoMeasurements;
-        //Initialize a Mersenne Twister             
-        auto gen = Random(unpredictableSeed);
         //Create pseudo-observations
         foreach(i; 0..kernels) {
             //Find a new time for the measurement
             auto newTime = NormalVariable!double(expectedOffset, timeDeviation);
             //Find a trajectory through the observation, then find the value on that trajectory
             //at the observation time (the pseudo-truth)
-            Vector base = this.integrator.integrateTo(obs, newTime(gen), 1);
+            Vector base = this.integrator.integrateTo(obs, newTime(*this.gen), 1);
             //Generate observations by perturbation from the pseudo-truth
             auto normalX = NormalVariable!double(base.x, this.stateError.x);
             auto normalY = NormalVariable!double(base.y, this.stateError.y);
             auto normalZ = NormalVariable!double(base.z, this.stateError.z);
             //Add the measurements to the lists
-            xPseudoMeasurements ~= normalX(gen);
-            yPseudoMeasurements ~= normalY(gen);
-            zPseudoMeasurements ~= normalZ(gen);
+            xPseudoMeasurements ~= normalX(*this.gen);
+            yPseudoMeasurements ~= normalY(*this.gen);
+            zPseudoMeasurements ~= normalZ(*this.gen);
         }
         //Find the mean of the pseudo-observations
         Vector meanVector = Vector(
@@ -353,12 +351,10 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
         double timeDeviation = this.timeDeviation;
         double[] pseudoTimes;
         //Generates pseudotimes; number of kernels can be changed within the code, but should probably be optimized
-        //Start the Mersenne twister
-        auto gen = Random(unpredictableSeed);
         //Generate some pseudo-observation times; these should be distributed normally
         foreach(i; 0..kernels) {
             auto newTimeVar = NormalVariable!double(expectedOffset, timeDeviation);
-            pseudoTimes ~= clamp(newTimeVar(gen), this.minimumOffset, this.maximumOffset);
+            pseudoTimes ~= clamp(newTimeVar(*this.gen), this.minimumOffset, this.maximumOffset);
         }
         //We can create placeholder vectors here with the time as the x component
         //This way as the list is iterated through the x component will be overwritten by a location
