@@ -3,6 +3,7 @@ import std.array;
 import std.conv;
 import std.file;
 import std.math;
+import std.range;
 import std.stdio;
 import mir.random;
 import mir.random.variable;
@@ -25,7 +26,7 @@ import systems.Circle;
 import systems.System;
 import systems.Lorenz63;
 
-void run(double observationInterval, double timeError, Vector error, Random gen) {
+void run(double observationInterval, double timeError, Vector error, Random gen, ulong seed) {
 	//Declare experiment parameters
 	//Universal
 	Vector startState = Vector(1, 1, 1); ///The initial point of the truth
@@ -85,7 +86,7 @@ void run(double observationInterval, double timeError, Vector error, Random gen)
 	//DiscreteExperimentalLikelihood treatmentLikelihood = cast(DiscreteExperimentalLikelihood) treatment.likelihoodGetter;
 	//File("data/tests/Test1.csv", "a").writeln(treatmentLikelihood.expectedTime, ",", treatmentLikelihood.timeDeviation, ",,", treatmentLikelihood.timeLikelihood);
 	immutable double treatmentRMSE = RMSE(treatment.ensembleSeries, treatment.truth);
-	File("data/dataCollection/Covar1.csv", "a").writeln(observationInterval, ",", timeError, ",", controlRMSE, ",", treatmentRMSE);
+	File("data/dataCollection/Covar1.csv", "a").writeln(seed, ", ", observationInterval, ",", timeError, ",", controlRMSE, ",", treatmentRMSE);
 	//File("data/dataCollection/Test2.csv", "a").writeln(observationInterval, ",", timeError, ",", controlRMSE);
 	writeln("Treatment RMSE is " ~ treatmentRMSE.to!string);
 }
@@ -97,15 +98,22 @@ void main() {
 		timeErrors ~= i * 0.001;
 	}
 	double[] errors = [0.1];
-	uint trials = 10;
+	//This will set up a number of random seeds
+	//The first map statement will give different random seeds every program run
+	//The second map statement will ensure that all program runs are the same
+	//You can also set random seeds to those outputted by the program to replicate its results
+	ulong[] seeds = iota(0, 10, 1)
+					/*.map!(a => unpredictableSeed)*/
+					.map!(a => cast(ulong)a)
+					.array;
 	//TODO: Make this clearer
 	File("data/dataCollection/Covar1.csv", "a").writeln("Run time: 80, state error: 0.1");
-	File("data/dataCollection/Covar1.csv", "a").writeln("Observation interval, time error, control RMSE, treatment RMSE");	
+	File("data/dataCollection/Covar1.csv", "a").writeln("Seed, Observation interval, time error, control RMSE, treatment RMSE");	
 	foreach(observationInterval; observationIntervals) {
 		foreach(timeError; timeErrors) {
 			foreach(error; errors) {
-				foreach(i; 0..trials) {
-					run(observationInterval, timeError, Vector(error, error, error), Random(unpredictableSeed));
+				foreach(ref seed; seeds) {
+					run(observationInterval, timeError, Vector(error, error, error), Random(seed), seed);
 				}
 			}
 		}
