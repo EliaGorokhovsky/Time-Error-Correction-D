@@ -1,23 +1,28 @@
+/**
+ * The source of the treatment for this experiment
+ * A novel method of inflating likelihood by accounting for time error
+ * This module's purpose is to estimate the magnitude of time error and then apply that
+ * to likelihood, returning an updated one for assimilation
+ */
 module assimilation.likelihood.DiscreteExperimentalLikelihood;
 
-import std.algorithm;
-import std.array;
-import std.conv;
-import std.datetime;
-import std.math;
-import std.parallelism;
-import std.range;
-import mir.random;
-import mir.random.variable;
-import assimilation.likelihood.Likelihood;
-import assimilation.likelihood.LikelihoodGetter;
-import data.Ensemble;
-import data.Timeseries;
-import data.Vector;
-import integrators.Integrator;
-import math.Matrix;
-import utility.ArrayStats;
-import utility.Normal;
+import std.algorithm; //Used for map and reduce functions (list operations)
+import std.array; //Used to convert map and reduce function outputs to arrays
+import std.conv; //Used to cast things
+import std.math; //Used to check approximate euality among doubles
+import std.parallelism; //Used to run operations in parallel for speed
+import std.range; //Used to generate iotas (ranges of numbers with steps)
+import mir.random; //Used for random number generation
+import mir.random.variable; //Used for random number generation
+import assimilation.likelihood.Likelihood; //Used for outputs from this object's opCall
+import assimilation.likelihood.LikelihoodGetter; //Used for the parent class of this object
+import data.Ensemble; //Used to handle ensembles for inference
+import data.Timeseries; //Used to handle ensembles and observations for inference
+import data.Vector; //Used to handle points for inference
+import integrators.Integrator; //Used to get values of timeseries when they are not defined
+import math.Matrix; //Used to do covariance computations when finding probability that observation was taken at a given time
+import utility.ArrayStats; //Used for mean, standard deviation, and covariance
+import utility.Normal; //Used to get the value of the normal probability density function
 
 /**
  * Gets likelihood inferentially using Bayes' rule

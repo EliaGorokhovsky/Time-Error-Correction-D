@@ -1,7 +1,13 @@
+/**
+ * A storage class for assimilation likelihoods
+ * This is necessary so that I can take in both discrete and continuous likelihoods on demand
+ * It is a class because D structs are not nullable - it is advantageous for likelihood to be able to be null
+ * as a placeholder
+ * A likelihood is the probability distribution of a true state given an observation
+ */
 module assimilation.likelihood.Likelihood;
 
-import std.typecons;
-import data.Vector;
+import data.Vector; //Used for multivariate Gaussians
 
 /**
  * A nullable data-storage class containing various ways to store a likelihood

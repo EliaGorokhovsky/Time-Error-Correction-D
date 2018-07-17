@@ -1,12 +1,9 @@
 /**
  * Math
- * This module was copied from d2d, which I contribute to, temporarily
+ * This module was copied temporarily from d2d, a graphics library which I contribute to
  * I will remove it when d2d separates math and graphics
  */
 module math;
 
-public import math.AxisAlignedBoundingBox;
-public import math.BezierCurve;
 public import math.Matrix;
-public import math.Segment;
 public import math.Vector;
