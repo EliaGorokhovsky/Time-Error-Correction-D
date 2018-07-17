@@ -14,3 +14,4 @@ time-error-correction-d-test-*
 *.lst
 *.csv
 time-error-correction-d
+*.ds_store
