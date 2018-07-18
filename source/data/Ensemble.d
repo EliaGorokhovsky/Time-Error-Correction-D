@@ -1,13 +1,17 @@
+/**
+ * The ensemble is essentially a Monte Carlo approximation of what we assume to be a Gaussian distribution
+ * It represents our prior(forecast) as a set of potential system states
+ * Ideally, we can assume that the true state and the ensemble members are from the same distribution
+ */
 module data.Ensemble;
 
-import std.algorithm;
-import std.array;
-import std.conv;
-import std.math;
-import mir.random;
-import mir.random.variable;
-import data.Vector;
-import utility.ArrayStats;
+import std.algorithm; //Used for map statements
+import std.array; //Used to convert map statement outputs to arrays
+import std.conv; //Used for casting to string
+import mir.random; //Used to generate a random ensemble from a start point 
+import mir.random.variable; //Used to generate a random ensemble from a start point
+import data.Vector; //Used to represent an ensemble member
+import utility.ArrayStats; //Used to find variance and standard deviation
 
 /**
  * An ensemble of points (position vectors)
@@ -15,7 +19,7 @@ import utility.ArrayStats;
  */
 class Ensemble {
 
-    Vector[] members;
+    Vector[] members; ///The points of the ensemble
 
     /**
      * Gets an array of all of the x-values of the points the ensemble
@@ -197,7 +201,8 @@ unittest {
     
     writeln("\nUNITTEST: Ensemble");
     Vector base = Vector(0, 0, 0);
-    Ensemble ensemble = new Ensemble(base, 20, Vector(0.01, 0.01, 0.01));
+    Random gen = Random(unpredictableSeed);
+    Ensemble ensemble = new Ensemble(base, 20, Vector(0.01, 0.01, 0.01), &gen);
     writeln("Ensemble with base (0, 0, 0) and error (0.01, 0.01, 0.01) has x values ", ensemble.xValues);
     writeln("Ensemble mean in x is ", ensemble.eMean.x);
     writeln("Ensemble standard deviation in x is ", ensemble.eStandardDeviation.x);

@@ -1,8 +1,14 @@
+/**
+ * My own vector implementation
+ * will clash with the d2d vector implementation
+ * This is an exclusively 3-dimensional vector with lightweight implementation
+ * Handles magnitude and binary operations only
+ * Is used to denote position, velocity, and error in the experiment
+ */
 module data.Vector;
 
-import std.conv;
-import std.math;
-import mir.ndslice;
+import std.conv; //Used to convert components to strings for string representation
+import std.math; //Used for exponents to calculate magnitude
 
 /**
  * A three-dimensional vector
@@ -11,12 +17,14 @@ import mir.ndslice;
  */
 struct Vector {
     
+    //The three vector components
     double x;
     double y;
     double z;
 
     /**
      * Gets a string representing the vector
+     * returns <x, y, z>
      */
     @property string toString() {
         return "<" ~ this.x.to!string ~ "," ~ this.y.to!string ~ "," ~ this.z.to!string ~ ">";
@@ -24,6 +32,7 @@ struct Vector {
 
     /**
      * Gets the components of the vector as an array
+     * returns [x, y, z]
      */
     @property double[] handle() {
         return [this.x, this.y, this.z];
@@ -37,21 +46,19 @@ struct Vector {
     }
 
     /**
-     * Handles vector addition and subtraction
+     * Handles vector operations
+     * Vectors are added, subtracted, multiplied, etc. elementwise
      */
     Vector opBinary(string op)(Vector other) {
-        static if (op == "+") return Vector(this.x + other.x, this.y + other.y, this.z + other.z);
-        else static if (op == "-") return Vector(this.x - other.x, this.y - other.y, this.z - other.z);
-        else return Vector(0, 0, 0);
+        mixin("return Vector(this.x " ~ op ~ " other.x, this.y " ~ op ~ " other.y, this.z " ~ op ~ " other.z);");
     }
 
     /**
-     * Handles scalar addition, subtraction, multiplication and division
+     * Handles scalar operations
+     * The operation is applied to every element
      */
     Vector opBinary(string op)(double scalar) {
-        static if (op == "*") return Vector(this.x * scalar, this.y * scalar, this.z * scalar);
-        else static if (op == "/") return Vector(this.x / scalar, this.y / scalar, this.z / scalar);
-        else return Vector(0, 0, 0);
+        mixin("return Vector(this.x " ~ op ~ " scalar, this.y " ~ op ~ " scalar, this.z " ~ op ~ " scalar);");
     }
 }
 

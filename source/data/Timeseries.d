@@ -1,10 +1,17 @@
+/**
+ * A timeseries in dynamical systems research is any function of time
+ * Here we store a list of states and map them to a list of times
+ * We can use an integrator to interpolate and get the value of the function at an undefined time
+ * We can also use linear interpolation to find it for vector timeseries
+ * This is basically a data storage class
+ */
 module data.Timeseries;
 
-import std.algorithm;
-import std.math;
-import data.Ensemble;
-import data.Vector;
-import integrators.Integrator;
+import std.algorithm; //Used for sorting when finding dt
+import std.math; //Used for approximate equality among doubles
+import data.Ensemble; //Used as an input type for an overload of value() that interpolates
+import data.Vector; //Used as an input type for an overload of value() that interpolates
+import integrators.Integrator; //Used to interpolate for getting value at undefined times
 
 /**
  * Essentially an array of something
@@ -23,6 +30,7 @@ class Timeseries(T) {
     @property T[double] timeAssociate() {
         assert(this.members.length == this.times.length);
         T[double] association;
+        //Fills the associative array
         foreach(i; 0..this.members.length) {
             association[this.times[i]] = this.members[i];
         }
@@ -38,6 +46,7 @@ class Timeseries(T) {
 
     /**
      * Returns a time increment, assuming difference between successive entries is constant
+     * Does so by finding the time difference between the two smallest times in the timeseries
      * This should be true in most cases for this experiment, but be careful when using it elsewhere
      */
     @property double dt() {
@@ -51,6 +60,7 @@ class Timeseries(T) {
         @property Timeseries!Vector meanSeries() {
             assert(this.members.length == this.times.length);
             Timeseries!Vector means = new Timeseries!Vector();
+            //Fils the new timeseries
             foreach(i; 0..this.members.length) {
                 means.add(this.times[i], this.members[i].eMean);
             }
@@ -88,12 +98,15 @@ class Timeseries(T) {
      */
     static if (is(T == Vector) || is(T == Ensemble)) {
         T value(double time, Integrator integrator = null) {
+            //If the time is defined, no need to use the integrator
             if(this.times.any!(a => a.approxEqual(time, 1e-6, 1e-6))) { 
                 double newTime = this.times.find!(a => a.approxEqual(time, 1e-6, 1e-6))[0];
                 return this.timeAssociate[newTime]; 
             }
             else {
+                //Otherwise, find the last defined time before the given time
                 ulong lastCountedTime = clamp(this.times.countUntil!"a > b"(time) - 1, 0, 100000);
+                //And use a single integrator step to get to the given time from there
                 double dt = time - this.times[cast(uint)lastCountedTime];
                 return integrator(this.timeAssociate[this.times[cast(uint)lastCountedTime]], dt);
             }
