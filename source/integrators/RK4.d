@@ -61,6 +61,13 @@ class RK4 : Integrator {
         return newState;
     }
 
+    /**
+     * Returns the string representation of this integrator
+     */
+    override string toString() {
+        return "RK4";
+    }
+
 }
 
 unittest {

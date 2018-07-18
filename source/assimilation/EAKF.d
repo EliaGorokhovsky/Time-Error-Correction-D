@@ -146,6 +146,13 @@ class EAKF : Assimilator {
         ).array;
     }
 
+    /**
+     * What to return when attempting to print this assimilator
+     */
+    override string toString() {
+        return "EAKF";
+    }
+
 }
 
 //Test several assimilations

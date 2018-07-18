@@ -1,7 +1,9 @@
 module systems.Lorenz63;
 
+import std.conv;
 import data.Vector;
 import systems.System;
+
 /** 
  * A three-dimensional hydrodynamics toy model defined by Lorenz (1963)
  * Creates a butterfly attractor in phase space
@@ -24,6 +26,10 @@ class Lorenz63 : System {
             state.x * (this.rho - state.z) - state.y,
             state.x * state.y - this.beta * state.z
         );
+    }
+
+    override string toString() {
+        return "L63(rho = " ~ this.rho.to!string ~ ", sigma = " ~ this.sigma.to!string ~ ", beta = " ~ this.beta.to!string ~ ")";
     }
 
 }

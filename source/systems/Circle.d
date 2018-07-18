@@ -1,5 +1,6 @@
 module systems.Circle;
 
+import std.conv;
 import data.Vector;
 import systems.System;
 /** 
@@ -21,6 +22,10 @@ class Circle : System {
             state.x,
             1
         );
+    }
+
+    override string toString() {
+        return "Circle (xMod = " ~ this.xMod.to!string ~ ", yMod = " ~ this.yMod.to!string ~ ")";
     }
 
 }

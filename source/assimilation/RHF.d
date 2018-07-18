@@ -275,6 +275,13 @@ class RHF : Assimilator {
         return cast(double[])observationIncrements;
     }  
 
+    /**
+     * What to return when attempting to print this assimilator
+     */
+    override string toString() {
+        return "RHF";
+    }
+
 }
 
 unittest {

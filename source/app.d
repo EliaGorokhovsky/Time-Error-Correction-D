@@ -17,6 +17,7 @@ import data.Vector;
 import data.Ensemble;
 import experiment.Analytics;
 import experiment.Experiment;
+import experiment.Parameters;
 import experiment.error.GaussianError;
 import experiment.error.GaussianTimeError;
 import experiment.error.UniformTimeError;
@@ -26,62 +27,39 @@ import systems.Circle;
 import systems.System;
 import systems.Lorenz63;
 
-void run(double observationInterval, double timeError, Vector error, Random gen, ulong seed) {
-	//Declare experiment parameters
-	//Universal
-	Vector startState = Vector(1, 1, 1); ///The initial point of the truth
-	const double startTime = 0; ///The initial time with which to associate the initial point
-	const double endTime = 80; ///The time at which to stop the experiment
-	const double dt = 0.01; ///The length of each step of the integrator
-	Lorenz63 system = new Lorenz63(); ///The dynamical system used as an environment for the experiment
-	RK4 integrator = new RK4(system); ///The integrator used to return points from previous points
-	//Getting observations
+void run(Parameters params, double observationInterval, double timeError, Vector error, Random gen, ulong seed) {
+	
 	Vector actualError = error; ///The standard deviation of the Gaussian error in space
-	const double obsStartTime = 0; ///When to start observing
-	const double obsEndTime = 80; ///When to stop observing
-	//Assimilation
 	Vector expectedError = error; ///The a priori expected standard deviation for Gaussian space error
-	const double ensembleStartTime = startTime; ///When to create the ensemble
-	const double ensembleEndTime = endTime; ///When to stop assimilating
-	const double ensembledt = dt; ///The step for ensemble integration
-	const double spinup = 0.1; ///The amount of time the ensemble is run before beginning to assimilate
-	const Vector ensembleGenesis = Vector(1, 1, 1); ///The mean of the initial ensemble distribution
-	const Vector ensembleDeviation = Vector(0.1, 0.1, 0.1); ///The standard deviation of the initial ensemble distribution
-	const int ensembleSize = 20;
-	EAKF controlAssimilator = new EAKF(); ///The assimilation method for the control
-	EAKF experimentalAssimilator = new EAKF(); ///The assimilation method for the treatment 
-	const double minimumOffset = -0.1; ///The first time that is a valid time for observation relative to reported time
-	const double maximumOffset = 0.1; ///The last time that is a valid time for observation relative to reported time
-	const uint bins = 20; ///The amount of different time intervals tested in experimental likelihood algorithm
-
+	
 	writeln("Control:");
-	Experiment control = new Experiment(integrator, controlAssimilator);
+	Experiment control = new Experiment(params.integrator, params.controlAssimilator);
 	//Get truth
-	control.getTruth(startState, startTime, endTime, dt);
+	control.getTruth(params.startState, params.startTime, params.endTime, params.dt);
 	//Get observations
-	control.setError(new GaussianTimeError(timeError, actualError, control.truth, integrator, &gen));
-	control.getObservations(obsStartTime, obsEndTime, observationInterval);
+	control.setError(new GaussianTimeError(timeError, actualError, control.truth, params.integrator, &gen));
+	control.getObservations(params.obsStartTime, params.obsEndTime, observationInterval);
 	//Do assimilation
 	control.setLikelihood(new LikelihoodGetter(control.observations, expectedError));
 	control.getEnsembleTimeseries!false(
-		ensembleStartTime, ensembleEndTime, ensembledt, spinup, 0, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation, &gen)
+		params.ensembleStartTime, params.ensembleEndTime, params.ensembledt, params.spinup, 0, new Ensemble(params.ensembleGenesis, params.ensembleSize, params.ensembleDeviation, &gen)
 	);
 	immutable double controlRMSE = RMSE(control.ensembleSeries, control.truth);
 	writeln("Control RMSE for time error ", timeError, " is ", controlRMSE);
 
 	writeln("Experiment:");
-	Experiment treatment = new Experiment(integrator, experimentalAssimilator);
-	treatment.getTruth(startState, startTime, endTime, dt);
-	treatment.setError(new GaussianTimeError(timeError, actualError, treatment.truth, integrator, &gen));
-	treatment.getObservations(obsStartTime, obsEndTime, observationInterval);
+	Experiment treatment = new Experiment(params.integrator, params.experimentalAssimilator);
+	treatment.getTruth(params.startState, params.startTime, params.endTime, params.dt);
+	treatment.setError(new GaussianTimeError(timeError, actualError, treatment.truth, params.integrator, &gen));
+	treatment.getObservations(params.obsStartTime, params.obsEndTime, observationInterval);
 	treatment.setLikelihood(
 		new DiscreteExperimentalLikelihood(
-			treatment.observations, expectedError, integrator, minimumOffset, maximumOffset, bins, &gen
+			treatment.observations, expectedError, params.integrator, params.minimumOffset, params.maximumOffset, params.bins, &gen
 		)
 	);
 	treatment.standardLikelihood = new LikelihoodGetter(treatment.observations, expectedError);
 	treatment.getEnsembleTimeseries!true(
-		ensembleStartTime, ensembleEndTime, ensembledt, spinup, 5, new Ensemble(ensembleGenesis, ensembleSize, ensembleDeviation, &gen)
+		params.ensembleStartTime, params.ensembleEndTime, params.ensembledt, params.spinup, 5, new Ensemble(params.ensembleGenesis, params.ensembleSize, params.ensembleDeviation, &gen)
 	);
 	//DiscreteExperimentalLikelihood treatmentLikelihood = cast(DiscreteExperimentalLikelihood) treatment.likelihoodGetter;
 	//File("data/tests/Test1.csv", "a").writeln(treatmentLikelihood.expectedTime, ",", treatmentLikelihood.timeDeviation, ",,", treatmentLikelihood.timeLikelihood);
@@ -92,6 +70,9 @@ void run(double observationInterval, double timeError, Vector error, Random gen,
 }
 
 void main() {
+	string filename = "data/dataCollection/Covar1.csv";
+	File logfile = File("data/ExperimentLog.txt", "a");
+	bool logThisExperiment = true; //Set this to false if you don't want to write the experiment to the file
 	double[] observationIntervals = [0.1, 0.5, 1];
 	double[] timeErrors = [];
 	foreach(i; 0..15) {
@@ -103,19 +84,48 @@ void main() {
 	//The second map statement will ensure that all program runs are the same
 	//You can also set random seeds to those outputted by the program to replicate its results
 	ulong[] seeds = iota(0, 10, 1)
-					/*.map!(a => unpredictableSeed)*/
-					.map!(a => cast(ulong)a)
+					.map!(a => unpredictableSeed)
+					/*.map!(a => cast(ulong)a)*/
 					.array;
-	//TODO: Make this clearer
-	File("data/dataCollection/Covar1.csv", "a").writeln("Run time: 80, state error: 0.1");
-	File("data/dataCollection/Covar1.csv", "a").writeln("Seed, Observation interval, time error, control RMSE, treatment RMSE");	
-	foreach(observationInterval; observationIntervals) {
+	//Package the parameters into one object
+	Parameters params = Parameters(
+		Vector(1, 1, 1), //The initial point of the truth
+		0, //The initial time with which to associate the initial point
+		80, //The time at which to stop the experiment
+		0.01, //The length of each step of the integrator
+		new Lorenz63(), //The dynamical system used as an environment for the experiment
+		new RK4(new Lorenz63()), //The integrator used to return points from previous points
+		0, //When to start observing
+		80, //When to stop observing
+		0, //When to create the ensemble
+		80, //When to stop assimilating
+		0.01, //The step for ensemble integration
+		0.1,//The amount of time the ensemble is run before beginning to assimilate
+		Vector(1, 1, 1), //The mean of the initial ensemble distribution
+		Vector(0.1, 0.1, 0.1), //The standard deviation of the initial ensemble distribution
+		20, //The size of the ensemble
+		new EAKF(), //The assimilation method for the control
+		new EAKF(), //The assimilation method for the treatment 
+		-0.1, //The first time that is a valid time for observation relative to reported time
+		0.1, //The last time that is a valid time for observation relative to reported time
+		20, //The amount of different time intervals tested in experimental likelihood algorithm
+		observationIntervals, //The intervals between observations that will be tested
+		timeErrors, //The time error standard deviations that will be tested
+		errors, //The observation error standard deviations that will be tested
+		seeds, //The seeds for each of the trials
+		filename //The file to write the data to
+	);
+	writeln(params);
+	if(logThisExperiment) logfile.writeln(params);
+	File(filename, "a").writeln("Seed, Observation interval, time error, control RMSE, treatment RMSE");	
+	/*foreach(observationInterval; observationIntervals) {
 		foreach(timeError; timeErrors) {
 			foreach(error; errors) {
 				foreach(ref seed; seeds) {
-					run(observationInterval, timeError, Vector(error, error, error), Random(seed), seed);
+					run(params, observationInterval, timeError, Vector(error, error, error), Random(seed), seed);
 				}
 			}
 		}
-	}
+	}*/
+	if(logThisExperiment) logfile.writeln("Complete!\n");
 }
