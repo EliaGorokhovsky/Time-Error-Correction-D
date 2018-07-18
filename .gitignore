@@ -15,3 +15,4 @@ time-error-correction-d-test-*
 *.csv
 time-error-correction-d
 *.ds_store
+*.txt
