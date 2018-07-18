@@ -123,6 +123,7 @@ unittest {
     import experiment.Analytics;
     import experiment.error.GaussianError;
     import assimilation.EAKF;
+    import mir.random;
 
     writeln("\nUNITTEST: Experiment");
     class Test : System {
@@ -132,11 +133,12 @@ unittest {
     Experiment process = new Experiment(rk4, new EAKF);
     process.getTruth(Vector(0, 0, 0), 0, 10, 1);
     writeln("Integrating <1, 1, 1> from 0 to 10 returns ", process.truth.members);
-    process.setError(new GaussianError(Vector(0.1, 0.1, 0.1), process.truth, rk4));
+    Random gen = Random(unpredictableSeed);
+    process.setError(new GaussianError(Vector(0.1, 0.1, 0.1), process.truth, rk4, &gen));
     process.getObservations(0, 10, 3);
     writeln("Observing every 3 seconds with std (0.1, 0.1, 0.1) returns ", process.observations.members);
     process.setLikelihood(new LikelihoodGetter(process.observations, Vector(0.1, 0.1, 0.1)));
-    process.getEnsembleTimeseries!false(0, 10, 1, 4, 0, new Ensemble(Vector(0, 0, 0), 3, Vector(0.1, 0.1, 0.1)));
+    process.getEnsembleTimeseries!false(0, 10, 1, 4, 0, new Ensemble(Vector(0, 0, 0), 3, Vector(0.1, 0.1, 0.1), &gen));
     writeln("RMSE is ", RMSE(process.ensembleSeries, process.truth));
 
 }
