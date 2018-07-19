@@ -114,8 +114,8 @@ void run(Parameters params, double observationInterval, double timeError, Vector
 			params.ensembleStartTime, params.ensembleEndTime, params.ensembledt, params.spinup, 5, new Ensemble(params.ensembleGenesis, params.ensembleSize, params.ensembleDeviation, &gen)
 		);
 		DiscreteExperimentalLikelihood treatmentLikelihood = cast(DiscreteExperimentalLikelihood) treatment.likelihoodGetter;
-		File(params.datafile, "a").writeln(seed, ", ", observationInterval, ", ", timeError, ", ", treatmentLikelihood.expectedTime, ",", treatmentLikelihood.timeDeviation, ",,", treatmentLikelihood.timeLikelihood);
-		writeln("Inferred time error for time error", timeError, " is ", treatmentLikelihood.timeDeviation);
+		File(params.datafile, "a").writeln(seed, ", ", observationInterval, ", ", timeError, ", ", treatmentLikelihood.expectedTime, ",", treatmentLikelihood.timeDeviation, ",,", treatmentLikelihood.timeLikelihood.to!string[1 .. $ - 1]);
+		writeln("Inferred time error for time error ", timeError, " is ", treatmentLikelihood.timeDeviation);
 	}
 
 }
@@ -129,12 +129,12 @@ enum RunConfigurations: string {
 
 void main() {
 	RunConfigurations config = RunConfigurations.INFERRED_TIME_ERROR;
-	string filename = "data/dataCollection/Covar1.csv";
-	File logfile = File("data/ExperimentLog.txt", "a");
+	string filename = "data/dataCollection/InferredTimeError6.csv";
+	string logfile = "data/ExperimentLog.txt";
 	bool logThisExperiment = true; //Set this to false if you don't want to write the experiment to the file
 	double[] observationIntervals = [0.5];
 	double[] timeErrors = [];
-	foreach(i; 0..15) {
+	foreach(i; 0..50) {
 		timeErrors ~= i * 0.001;
 	}
 	double[] errors = [0.1];
@@ -142,7 +142,7 @@ void main() {
 	//The first map statement will give different random seeds every program run
 	//The second map statement will ensure that all program runs are the same
 	//You can also set random seeds to those outputted by the program to replicate its results
-	ulong[] seeds = iota(0, 10, 1)
+	ulong[] seeds = iota(0, 1, 1)
 					.map!(a => unpredictableSeed)
 					/*.map!(a => cast(ulong)a)*/
 					.array;
@@ -150,14 +150,14 @@ void main() {
 	Parameters params = Parameters(
 		Vector(1, 1, 1), //The initial point of the truth
 		0, //The initial time with which to associate the initial point
-		80, //The time at which to stop the experiment
+		20, //The time at which to stop the experiment
 		0.01, //The length of each step of the integrator
 		new TestSystem(), //The dynamical system used as an environment for the experiment
 		new RK4(new TestSystem()), //The integrator used to return points from previous points
 		0, //When to start observing
-		80, //When to stop observing
+		20, //When to stop observing
 		0, //When to create the ensemble
-		80, //When to stop assimilating
+		20, //When to stop assimilating
 		0.01, //The step for ensemble integration
 		0.1,//The amount of time the ensemble is run before beginning to assimilate
 		Vector(1, 1, 1), //The mean of the initial ensemble distribution
@@ -176,7 +176,7 @@ void main() {
 		config //The run configuration
 	);
 	writeln(params);
-	if(logThisExperiment) logfile.writeln(params);
+	if(logThisExperiment) File(logfile, "a").writeln(params);
 	if(config == RunConfigurations.COMPARE_RMSE) {
 		File(filename, "a").writeln("Seed, Observation Interval, Time Error, Control RMSE, Treatment RMSE");
 	} else if(config == RunConfigurations.CONTROL_RMSE) {
@@ -184,7 +184,7 @@ void main() {
 	} else if(config == RunConfigurations.TREATMENT_RMSE) {
 		File(filename, "a").writeln("Seed, Observation Interval, Time Error, Treatment RMSE");
 	} else if(config == RunConfigurations.INFERRED_TIME_ERROR) {
-		string binMiddles = iota(0, params.bins, 1).map!(a => (params.maximumOffset + params.minimumOffset) / (params.bins * 2) + a * (params.maximumOffset - params.minimumOffset) / (params.bins)).array.to!string[1 .. $ - 1];
+		string binMiddles = iota(0, params.bins, 1).map!(a => params.minimumOffset + (params.maximumOffset - params.minimumOffset) / (params.bins * 2) + a * (params.maximumOffset - params.minimumOffset) / (params.bins)).array.to!string[1 .. $ - 1];
 		File(filename, "a").writeln("Seed, Observation Interval, Time Error, Inferred Time Offset, Inferred Time Error, Inferred Time Offset Distribution: , ", binMiddles);
 	}
 	foreach(observationInterval; observationIntervals) {
@@ -196,5 +196,5 @@ void main() {
 			}
 		}
 	}
-	if(logThisExperiment) logfile.writeln("Complete!\n");
+	if(logThisExperiment) File(logfile, "a").writeln("Complete!\n");
 }
