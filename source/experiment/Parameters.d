@@ -8,6 +8,7 @@ import assimilation.Assimilator; //Used to store the assimilation methods that w
 import data.Vector; //Used to store start and end states for the system
 import integrators.Integrator; //Used to store how the system will be advanced in time
 import systems.System; //Used to store the system that will be assimilated
+import app; //Used to know about run configurations
 
 /**
  * A class (basically a struct) storing experimental parameters that define how this experiment will run
@@ -42,7 +43,8 @@ struct Parameters {
     double[] timeErrors; ///The different time errors that were tested
     double[] errors; ///The different state errors that were tested
     ulong[] seeds; ///The different random seeds that were used for the trials
-    string filename; ///The name of the file that is written to
+    string datafile; ///The name of the file that is written to
+    RunConfigurations config; ///The type of experiment that is being run
 
     /**
      * Represents the parameters as a string in order to write them to a file
@@ -50,7 +52,8 @@ struct Parameters {
     string toString() {
         return
         "Experiment:" ~
-        "\nFilename: " ~ this.filename ~
+        "\nFilename: " ~ this.datafile ~
+        "\nRun Configuration: " ~ this.config ~
         "\nObservation Intervals: " ~ this.observationIntervals.to!string ~
         "\nTime Errors: " ~ this.timeErrors.to!string ~
         "\nState Errors: " ~ this.errors.to!string ~

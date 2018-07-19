@@ -1,4 +1,4 @@
-module systems.Circle;
+module systems.TestSystem;
 
 import std.conv;
 import data.Vector;
@@ -6,7 +6,7 @@ import systems.System;
 /** 
  * A three-dimensional non-chaotic system that produces a circle
  */
-class Circle : System {
+class TestSystem : System {
     
     double xMod;
     double yMod;
@@ -18,9 +18,9 @@ class Circle : System {
 
     override Vector opCall(Vector state) {
         return Vector(
-            -state.y,
-            state.x,
-            1
+            0,
+            0,
+            0
         );
     }
 
