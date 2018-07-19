@@ -129,8 +129,9 @@ enum RunConfigurations: string {
 
 void main() {
 	RunConfigurations config = RunConfigurations.INFERRED_TIME_ERROR;
-	string filename = "data/dataCollection/InferredTimeError6.csv";
+	string filename = "data/dataCollection/InferredTimeError9.csv";
 	string logfile = "data/ExperimentLog.txt";
+	string tag = "Not-Ensemble-Covariance-Adjusted";
 	bool logThisExperiment = true; //Set this to false if you don't want to write the experiment to the file
 	double[] observationIntervals = [0.5];
 	double[] timeErrors = [];
@@ -150,18 +151,18 @@ void main() {
 	Parameters params = Parameters(
 		Vector(1, 1, 1), //The initial point of the truth
 		0, //The initial time with which to associate the initial point
-		20, //The time at which to stop the experiment
+		40, //The time at which to stop the experiment
 		0.01, //The length of each step of the integrator
-		new TestSystem(), //The dynamical system used as an environment for the experiment
-		new RK4(new TestSystem()), //The integrator used to return points from previous points
+		new Lorenz63(), //The dynamical system used as an environment for the experiment
+		new RK4(new Lorenz63()), //The integrator used to return points from previous points
 		0, //When to start observing
-		20, //When to stop observing
+		40, //When to stop observing
 		0, //When to create the ensemble
-		20, //When to stop assimilating
+		40, //When to stop assimilating
 		0.01, //The step for ensemble integration
 		0.1,//The amount of time the ensemble is run before beginning to assimilate
 		Vector(1, 1, 1), //The mean of the initial ensemble distribution
-		Vector(0.0001, 0.0001, 0.0001), //The standard deviation of the initial ensemble distribution
+		Vector(0.1, 0.1, 0.1), //The standard deviation of the initial ensemble distribution
 		20, //The size of the ensemble
 		new EAKF(), //The assimilation method for the control
 		new EAKF(), //The assimilation method for the treatment 
@@ -173,7 +174,8 @@ void main() {
 		errors, //The observation error standard deviations that will be tested
 		seeds, //The seeds for each of the trials
 		filename, //The file to write the data to
-		config //The run configuration
+		config, //The run configuration
+		tag //User-specified experiment information
 	);
 	writeln(params);
 	if(logThisExperiment) File(logfile, "a").writeln(params);

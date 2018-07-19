@@ -45,6 +45,7 @@ struct Parameters {
     ulong[] seeds; ///The different random seeds that were used for the trials
     string datafile; ///The name of the file that is written to
     RunConfigurations config; ///The type of experiment that is being run
+    string tag; ///User-specified information about the experiment
 
     /**
      * Represents the parameters as a string in order to write them to a file
@@ -54,6 +55,7 @@ struct Parameters {
         "Experiment:" ~
         "\nFilename: " ~ this.datafile ~
         "\nRun Configuration: " ~ this.config ~
+        "\nTag: " ~ this.tag ~
         "\nObservation Intervals: " ~ this.observationIntervals.to!string ~
         "\nTime Errors: " ~ this.timeErrors.to!string ~
         "\nState Errors: " ~ this.errors.to!string ~
