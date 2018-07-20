@@ -8,24 +8,26 @@ import systems.System;
  */
 class TestSystem : System {
     
-    double xMod;
-    double yMod;
+    double xSlope;
+    double ySlope;
+    double zSlope;
 
-    this(double xMod = 1, double yMod = 1) {
-        this.xMod = xMod;
-        this.yMod = yMod;
+    this(double xSlope = 5, double ySlope = 10, double zSlope = 15) {
+        this.xSlope = xSlope;
+        this.ySlope = ySlope;
+        this.zSlope = zSlope;
     }
 
     override Vector opCall(Vector state) {
         return Vector(
-            0,
-            0,
-            0
+            xSlope,
+            ySlope,
+            zSlope
         );
     }
 
     override string toString() {
-        return "Circle (xMod = " ~ this.xMod.to!string ~ ", yMod = " ~ this.yMod.to!string ~ ")";
+        return "Test System (xSlope = " ~ this.xSlope.to!string ~ ", ySlope = " ~ this.ySlope.to!string ~ ", zSlope = " ~ this.zSlope.to!string ~ ")";
     }
 
 }
