@@ -111,7 +111,7 @@ void run(Parameters params, double observationInterval, double timeError, Vector
 		);
 		treatment.standardLikelihood = new LikelihoodGetter(treatment.observations, expectedError);
 		treatment.getEnsembleTimeseries!true(
-			params.ensembleStartTime, params.ensembleEndTime, params.ensembledt, params.spinup, 5, new Ensemble(params.ensembleGenesis, params.ensembleSize, params.ensembleDeviation, &gen)
+			params.ensembleStartTime, params.ensembleEndTime, params.ensembledt, params.spinup, 2, new Ensemble(params.ensembleGenesis, params.ensembleSize, params.ensembleDeviation, &gen)
 		);
 		DiscreteExperimentalLikelihood treatmentLikelihood = cast(DiscreteExperimentalLikelihood) treatment.likelihoodGetter;
 		File(params.datafile, "a").writeln(seed, ", ", observationInterval, ", ", timeError, ", ", treatmentLikelihood.expectedTime, ",", treatmentLikelihood.timeDeviation, ",,", treatmentLikelihood.timeLikelihood.to!string[1 .. $ - 1]);
@@ -129,13 +129,13 @@ enum RunConfigurations: string {
 
 void main() {
 	RunConfigurations config = RunConfigurations.INFERRED_TIME_ERROR;
-	string filename = "data/dataCollection/InferredTimeError9.csv";
+	string filename = "data/dataCollection/InferredTimeError5.csv";
 	string logfile = "data/ExperimentLog.txt";
-	string tag = "Not-Ensemble-Covariance-Adjusted";
+	string tag = "Inference-Spinup=2, Test-System, Addition";
 	bool logThisExperiment = true; //Set this to false if you don't want to write the experiment to the file
-	double[] observationIntervals = [0.5];
+	double[] observationIntervals = [0.1];
 	double[] timeErrors = [];
-	foreach(i; 0..50) {
+	foreach(i; 0..15) {
 		timeErrors ~= i * 0.001;
 	}
 	double[] errors = [0.1];
@@ -153,8 +153,7 @@ void main() {
 		0, //The initial time with which to associate the initial point
 		40, //The time at which to stop the experiment
 		0.01, //The length of each step of the integrator
-		new Lorenz63(), //The dynamical system used as an environment for the experiment
-		new RK4(new Lorenz63()), //The integrator used to return points from previous points
+		new RK4(new TestSystem(4, 8, 12)), //The integrator used to return points from previous points, and its system
 		0, //When to start observing
 		40, //When to stop observing
 		0, //When to create the ensemble
@@ -166,9 +165,9 @@ void main() {
 		20, //The size of the ensemble
 		new EAKF(), //The assimilation method for the control
 		new EAKF(), //The assimilation method for the treatment 
-		-0.1, //The first time that is a valid time for observation relative to reported time
-		0.1, //The last time that is a valid time for observation relative to reported time
-		20, //The amount of different time intervals tested in experimental likelihood algorithm
+		-0.06, //The first time that is a valid time for observation relative to reported time
+		0.06, //The last time that is a valid time for observation relative to reported time
+		21, //The amount of different time intervals tested in experimental likelihood algorithm
 		observationIntervals, //The intervals between observations that will be tested
 		timeErrors, //The time error standard deviations that will be tested
 		errors, //The observation error standard deviations that will be tested

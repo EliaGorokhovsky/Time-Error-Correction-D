@@ -20,7 +20,6 @@ struct Parameters {
     double startTime; ///The initial time with which to associate the initial point
 	double endTime; ///The time at which to stop the experiment
 	double dt; ///The length of each step of the integrator
-	System system; ///The dynamical system used as an environment for the experiment
 	Integrator integrator; ///The integrator used to return points from previous points
 	//Getting observations
 	double obsStartTime; ///When to start observing
@@ -66,7 +65,7 @@ struct Parameters {
         "\nTruth Start Time: " ~ this.startTime.to!string ~
         "; Truth End Time: " ~ this.endTime.to!string ~
         "; Truth dt: " ~ this.dt.to!string ~ 
-        "\nSystem: " ~ this.system.toString ~
+        "\nSystem: " ~ this.integrator.slope.toString ~
         "\nIntegrator: " ~ this.integrator.toString ~
         "\nObservations Start Time: " ~ this.obsStartTime.to!string ~ 
         "; Observations End Time: " ~ this.obsEndTime.to!string ~
