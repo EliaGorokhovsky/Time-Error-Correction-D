@@ -37,6 +37,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
     double timeOffset; ///The known offset in time; only use if testing knownErrorNormalLikelihood
     double timeError; ///The known standard deviation of time error; ^^^
     Random* gen; ///The random number generator used for the random generation; this is passed in so we can control the seed globally
+    bool multiply = false; ///The inferential method can either multiply or add successive inferences; if true, multiply
 
     /**
      * Gets the mathematical expected value for time offset. This is the weighted average of the bin middles.
@@ -136,7 +137,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
         this.bins = bins;
         //Fill the time likelihood with zeroes for now
         foreach(i; 0..bins) {
-            this.timeLikelihood ~= 0;
+            this.timeLikelihood ~= multiply? 1 : 0;
         }
         //Set the probabilities at the middle of the interval to 1
         //This gives the middle of the interval extra priority; 
@@ -150,7 +151,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
         //Does the above in the general case
         const double binWidth = (this.maximumOffset - this.minimumOffset) / this.bins;
         //If the minimum offset is greater than 0 then assign probability to the smallest bin
-        if(this.minimumOffset >= 0) {
+        /*if(this.minimumOffset >= 0) {
             this.timeLikelihood[0] = 1;
         //If 0 falls between two bins (i.e. minimumOffset is an integer multiple of binWidth) then assign probability to both
         } else if((-this.minimumOffset / binWidth).to!int.to!double.approxEqual(-this.minimumOffset / binWidth)) {
@@ -159,7 +160,7 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
         //Otherwise assign probability to the bin that 0 falls within
         } else {
             this.timeLikelihood[cast(int)(clamp(-this.minimumOffset / binWidth, 0, this.bins - 1))] = 1;
-        }
+        }*/
         this.timeOffset = timeOffset;
         this.timeError = timeError;
         this.gen = gen;
@@ -480,6 +481,12 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
         foreach(i; 0..this.bins) {
             binQuantities ~= 0;
         }
+        //The observation error covariance is 0 outside the diagonal because we assume obs error is dimensionally independent
+        Matrix!(double, 3, 3) obsErrorCovariance = new Matrix!(double, 3, 3)([
+                                                                    [this.stateError.x.pow(2), 0, 0],
+                                                                    [0, this.stateError.y.pow(2), 0],
+                                                                    [0, 0, this.stateError.z.pow(2)]
+                                                                    ]);
         foreach(i; 0..binMiddles.length) {
             Vector distance = binValues[i] - obs;
             //Be careful; options 1 and 2 are biased because they do not account for ensemble variance
@@ -500,24 +507,27 @@ class DiscreteExperimentalLikelihood : LikelihoodGetter {
             //Option 3: Smooth multivariate
             //Assume error is dimensionally independent, then find probability
             //By finding the value of a multivariate (in this case trivariate) normal pdf at the value of distance
-            //The observation error covariance is 0 outside the diagonal because we assume obs error is dimensionally independent
-            Matrix!(double, 3, 3) obsErrorCovariance = new Matrix!(double, 3, 3)([
-                                                                                [this.stateError.x, 0, 0],
-                                                                                [0, this.stateError.y, 0],
-                                                                                [0, 0, this.stateError.z]
-                                                                                ]);
             //The covariance matrix of the ensemble has the variance across the diagonals and the covariance everywhere else
             Matrix!(double, 3, 3) ensembleCovariance = covariance!(3, 1)([ensembleValues[i].xValues, ensembleValues[i].yValues, ensembleValues[i].zValues]);
             //The value of the probability is given by the trivariate normal PDF at the observation with mean ensemble mean
             //and covariance the sum of the ensemble covariance and the obs error covariance
             //This is the probability of taking the observation if the truth is taken from multivariate normal distribution
             //that is represented by the ensemble
-            binQuantities[i] = trivariateNormalVal(obs.handle, binValues[i].handle, obsErrorCovariance + ensembleCovariance);
+            binQuantities[i] = trivariateNormalVal(obs.handle, binValues[i].handle, obsErrorCovariance/* + ensembleCovariance*/);
         }
         //In parallel, update the time likelihood with the new inferred likelihood
-        foreach(index, ref component; binQuantities.parallel) {
-            this.timeLikelihood[index] += component;
+        if(this.multiply) {
+            foreach(index, ref component; binQuantities.parallel) {
+                this.timeLikelihood[index] *= component / binQuantities.sum;
+            }   
+            this.timeLikelihood = this.normalizedTimeLikelihood;
+        } else {
+            foreach(index, ref component; binQuantities.parallel) {
+                this.timeLikelihood[index] += component / binQuantities.sum;
+            }
         }
+        /*import std.stdio;
+        writeln(binQuantities);*/
         return this.timeLikelihood;
     }
 
