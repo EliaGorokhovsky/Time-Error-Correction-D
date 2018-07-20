@@ -3,6 +3,7 @@ module utility.ArrayStats;
 import std.algorithm;
 import std.array;
 import std.math;
+import std.parallelism;
 import math;
 
 /**
@@ -51,6 +52,35 @@ Matrix!(double, dim, dim) covariance(uint dim, int ddof = 0)(double[][] data) {
     }
     return covarianceMatrix;
 }
+
+/**
+ * Gets the mean of a discretely defined pdf represented as a list
+ * Support is the domain of the function
+ */
+double PDFMean(double[] support, double[] probabilities) {
+    assert(support.length == probabilities.length, "Function does not match its support");
+    double[] supportCopy = support.dup;
+    foreach(index, ref component; supportCopy.parallel) {
+        component *= probabilities[index];
+    }
+    return supportCopy.sum / probabilities.sum;
+}
+
+/**
+ * Gets the variance of a discretely defined pdf represented as a list
+ * Support is the domain of the function
+ */
+double PDFVariance(double[] support, double[] probabilities) {
+    assert(support.length == probabilities.length, "Function does not match its support");
+    double[] supportCopy = support.dup;
+    double mean = PDFMean(support, probabilities);
+    foreach(index, ref component; supportCopy.parallel) {
+        component = probabilities[index] * (component - mean).pow(2);
+    }
+    return supportCopy.sum / probabilities.sum;
+}
+
+
 
 unittest {
     import std.stdio;
