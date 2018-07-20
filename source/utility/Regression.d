@@ -3,7 +3,6 @@ module utility.Regression;
 import std.algorithm;
 import std.array;
 import std.math;
-import dstats.regress;
 import utility.ArrayStats;
 
 /**

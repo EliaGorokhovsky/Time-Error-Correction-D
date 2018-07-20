@@ -1,21 +1,9 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"cairod": "0.0.1-alpha.3+1.10.2",
-		"derelict-ft": "1.0.2",
-		"derelict-util": "2.1.0",
 		"dstats": "1.0.5",
-		"dunit": "1.0.14",
-		"ggplotd": "0.4.20",
-		"gtk-d": "3.2.3",
-		"matplotd": "0.0.1",
-		"matplotlib-d": "0.1.4",
 		"mir-algorithm": "0.8.0",
 		"mir-linux-kernel": "1.0.0",
-		"mir-random": "0.3.6",
-		"painlesstraits": "0.0.3",
-		"pyd": "0.9.9",
-		"windows-headers": "1.0.1",
-		"x11": "1.0.19"
+		"mir-random": "0.3.6"
 	}
 }
