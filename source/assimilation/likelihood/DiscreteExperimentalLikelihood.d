@@ -130,7 +130,7 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter {
      * Constructs a likelihood getter with information about the experiment, as well as a priori knowledge of time offset and desired number of bins for time offset likelihood
      * Also integrates ensemble timeseries to the maximum offset in order to have values for the interval from minimum to maximum offset
      */
-    this(Timeseries!Vector!(double, dim) observations, Vector!(double, dim) stateError, Integrator!dim integrator, double minimumOffset, double maximumOffset, uint bins, Random* gen, double timeOffset = 0, double timeError = 0) {
+    this(Timeseries!(Vector!(double, dim)) observations, Vector!(double, dim) stateError, Integrator!dim integrator, double minimumOffset, double maximumOffset, uint bins, Random* gen, double timeOffset = 0, double timeError = 0) {
         super(observations, stateError);
         this.integrator = integrator;
         this.minimumOffset = minimumOffset;
@@ -170,7 +170,7 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter {
     /**
      * Returns likelihood
      */
-    override Likelihood opCall(double time, Timeseries!Ensemble!dim ensembles) {
+    override Likelihood opCall(double time, Timeseries!(Ensemble!dim) ensembles) {
         //Choose one:
         //-------------------------NORMAL TIME---------------------------------------------------------------
         //Assumes time is normally distributed and does a kernel density estimation using
@@ -196,12 +196,12 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter {
      * Fast alternative to normalLikelihood if error is known
      * Takes in observation time and a timeseries of the ensembles up until that time
      */
-    Likelihood knownErrorNormalLikelihood(double time, Timeseries!Ensemble!dim ensembles, uint kernels) {
+    Likelihood knownErrorNormalLikelihood(double time, Timeseries!(Ensemble!dim) ensembles, uint kernels) {
         //Get the value of the observation at the given time
         Vector obs = this.observations.value(time);
         //These lists will store the values of the pseudo measurements independently
         //So that we can assimilate all variables separately
-        double[dim][] pseudoMeasurements
+        double[dim][] pseudoMeasurements;
         //Do this a specified number of times: create a pseudo observation
         foreach(i; 0..kernels) {
             //Find a new time for the measurement
@@ -226,7 +226,7 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter {
      * Returns a normal likelihood from normal-assumed time
      * TODO: Move into its own LikelihoodGetter
      */
-    Likelihood normalLikelihood(double time, Timeseries!Ensemble!dim ensembles, uint kernels) {
+    Likelihood normalLikelihood(double time, Timeseries!(Ensemble!dim) ensembles, uint kernels) {
         //Get the most recent ensemble
         Ensemble!dim ensemble = new Ensemble!dim(ensembles.members[$ - 1].members);
         //If the ensemble is not yet past the maximum offset, integrate it through the interval:
@@ -259,7 +259,7 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter {
         double timeDeviation = this.timeDeviation;
         //These lists will store the values of the pseudo measurements independently
         //So that we can assimilate all variables separately
-        double[dim][] pseudoMeasurements
+        double[dim][] pseudoMeasurements;
         //Do this a specified number of times: create a pseudo observation
         foreach(i; 0..kernels) {
             //Find a new time for the measurement
@@ -286,7 +286,7 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter {
      * given by manufacturer
      * Assumes time likelihood is Gaussian (data suggest it will be with current method; it is advised to use likelihoodFromDiscrete time otherwise)
      */
-    Likelihood likelihoodFromNormalTime(double time, Timeseries!Ensemble!dim ensembles, uint kernels) {
+    Likelihood likelihoodFromNormalTime(double time, Timeseries!(Ensemble!dim) ensembles, uint kernels) {
         Ensemble!dim ensemble = new Ensemble!dim(ensembles.members[$ - 1].members);
         //If the ensemble is not yet past the maximum offset, integrate it through the interval:
         if(ensembles.times[$ - 1] + maximumOffset > ensembles.times[$ - 1]) {
@@ -322,7 +322,7 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter {
             }
         }
         //Get the observation at the give time
-        Vector!(double dim) obs = this.observations.value(time);
+        Vector!(double, dim) obs = this.observations.value(time);
         //Retrieve the inferred time likelihood
         double expectedOffset = this.expectedTime;
         double timeDeviation = this.timeDeviation;
@@ -336,7 +336,7 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter {
         //We can create placeholder vectors here with the time as the x component
         //This way as the list is iterated through the x component will be overwritten by a location
         //and no extra memory assignment is necessary
-        Vector!(double, dim)[] bases = pseudoTimes.dup.map!(a => Vector!(double, dim)(a).array;
+        Vector!(double, dim)[] bases = pseudoTimes.dup.map!(a => Vector!(double, dim)(a)).array;
         //In parallel, iterate through the placeholders
         foreach(ref component; bases.parallel) {
             //Fill the placeholder vector with the position of the obs trajectory at the given time
@@ -367,7 +367,7 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter {
      * Returns likelihood packaged with discretely defined experimentally determined pdf for a given time
      * Assume likelihood histogram is accurate
      */
-    Likelihood likelihoodFromDiscreteTime(double time, Timeseries!Ensemble!dim ensembles) {
+    Likelihood likelihoodFromDiscreteTime(double time, Timeseries!(Ensemble!dim) ensembles) {
         Ensemble!dim ensemble = new Ensemble!dim(ensembles.members[$ - 1].members);
         //If the ensemble is not yet past the maximum offset, integrate it through the interval:
         if(ensembles.times[$ - 1] + maximumOffset > ensembles.times[$ - 1]) {
@@ -425,7 +425,7 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter {
     /**
      * Gets time likelihood, accounting for ensemble variance
      */
-    double[] getTimeLikelihood(double time, Timeseries!Ensemble!dim ensembles) {
+    double[] getTimeLikelihood(double time, Timeseries!(Ensemble!dim) ensembles) {
         //Ensure that the observation time is close enough to one that we know
         assert(this.observations.times.any!(a => a.approxEqual(time, 1e-6, 1e-6)), "Time not in observation times");
         //Get observation at time
