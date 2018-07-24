@@ -1,7 +1,6 @@
 module systems.Lorenz63;
 
 import std.conv;
-import data.Vector;
 import systems.System;
 
 /** 

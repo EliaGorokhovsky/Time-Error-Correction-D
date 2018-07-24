@@ -13,7 +13,6 @@ import assimilation.RHF;
 import assimilation.likelihood.Likelihood;
 import assimilation.likelihood.LikelihoodGetter;
 import assimilation.likelihood.DiscreteExperimentalLikelihood;
-import data.Vector;
 import data.Ensemble;
 import experiment.Analytics;
 import experiment.Experiment;

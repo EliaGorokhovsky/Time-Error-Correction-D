@@ -5,7 +5,6 @@ module experiment.Parameters;
 
 import std.conv; //Used to convert things to strings
 import assimilation.Assimilator; //Used to store the assimilation methods that will be used
-import data.Vector; //Used to store start and end states for the system
 import integrators.Integrator; //Used to store how the system will be advanced in time
 import systems.System; //Used to store the system that will be assimilated
 import app; //Used to know about run configurations

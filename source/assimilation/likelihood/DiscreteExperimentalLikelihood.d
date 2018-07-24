@@ -18,7 +18,6 @@ import assimilation.likelihood.Likelihood; //Used for outputs from this object's
 import assimilation.likelihood.LikelihoodGetter; //Used for the parent class of this object
 import data.Ensemble; //Used to handle ensembles for inference
 import data.Timeseries; //Used to handle ensembles and observations for inference
-import data.Vector; //Used to handle points for inference
 import integrators.Integrator; //Used to get values of timeseries when they are not defined
 import math.Matrix; //Used to do covariance computations when finding probability that observation was taken at a given time
 import utility.ArrayStats; //Used for mean, standard deviation, and covariance

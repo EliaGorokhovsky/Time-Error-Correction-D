@@ -18,7 +18,6 @@ import std.typecons; //Used for tuples for sorting pairs of items
 import assimilation.Assimilator; //Parent class
 import assimilation.likelihood.Likelihood; //Used for input likelihood
 import data.Ensemble; //Used for input and output ensemble
-import data.Vector; //Used for computations in several dimensions
 import experiment.Analytics; //Used to check if an array has NaN values
 import utility.ArrayStats; //Used for standard deviation calculations for Gaussian tails
 import utility.Math; //Used for approximate equality between doubles

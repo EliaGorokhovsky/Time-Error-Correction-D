@@ -14,7 +14,6 @@ import assimilation.likelihood.Likelihood;
 import assimilation.likelihood.LikelihoodGetter;
 import data.Ensemble;
 import data.Timeseries;
-import data.Vector;
 import experiment.Analytics;
 import experiment.error.ErrorGenerator;
 import integrators.Integrator;

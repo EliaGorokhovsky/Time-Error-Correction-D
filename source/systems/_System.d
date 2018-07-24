@@ -1,7 +1,6 @@
 module systems.System;
 
 import data.Ensemble;
-import data.Vector;
 
 /**
  * An overarching definition of what makes a dynamical system

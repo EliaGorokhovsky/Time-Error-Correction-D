@@ -7,7 +7,6 @@ import std.stdio;
 import std.traits;
 import data.Ensemble;
 import data.Timeseries;
-import data.Vector;
 
 /**
  * Finds the RMSE of a pair of timeseries

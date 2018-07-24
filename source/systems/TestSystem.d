@@ -1,7 +1,6 @@
 module systems.TestSystem;
 
 import std.conv;
-import data.Vector;
 import systems.System;
 /** 
  * A three-dimensional non-chaotic system that produces a circle

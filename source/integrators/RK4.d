@@ -3,7 +3,6 @@ module integrators.RK4;
 import std.algorithm;
 import std.array;
 import data.Ensemble;
-import data.Vector;
 import integrators.Integrator;
 import systems.System;
 

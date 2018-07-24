@@ -12,7 +12,6 @@ import std.math; //Used to check approximate equality among doubles
 import assimilation.likelihood.Likelihood; //Used to output a standard data storage class
 import data.Ensemble; //Used to standardize discrete likelihood output, though this class does not use them
 import data.Timeseries; //Used to keep track of observations
-import data.Vector; //Used to keep track of observations
 
 /**
  * Gets the likelihood for assimilation given information about the system

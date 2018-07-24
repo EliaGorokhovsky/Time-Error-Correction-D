@@ -8,7 +8,6 @@ module assimilation.Assimilator;
 
 import assimilation.likelihood.Likelihood; //Used for inputting likelihoods
 import data.Ensemble; //Used for input and output ensembles
-import data.Vector; //Used for calculations in 3d
 
 /**
  * An overarching definition of what makes a data assimilation method

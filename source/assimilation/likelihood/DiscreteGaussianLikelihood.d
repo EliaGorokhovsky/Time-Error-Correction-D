@@ -11,7 +11,6 @@ import assimilation.likelihood.Likelihood; //Used to handle outputs from this cl
 import assimilation.likelihood.LikelihoodGetter; //Used for the parent class of this class
 import data.Ensemble; //Used to define likelihood only at ensemble members
 import data.Timeseries; //Used to standardize inputs across all LikelihoodGetter children
-import data.Vector; //Used to handle observations
 import integrators.Integrator; //Used to get values of otherwise undefined timeseries
 import utility.Normal; //Used to find the value of the normal probability density function for discrete likelihood
 

@@ -10,7 +10,6 @@ module data.Timeseries;
 import std.algorithm; //Used for sorting when finding dt
 import std.math; //Used for approximate equality among doubles
 import data.Ensemble; //Used as an input type for an overload of value() that interpolates
-import data.Vector; //Used as an input type for an overload of value() that interpolates
 import integrators.Integrator; //Used to interpolate for getting value at undefined times
 
 /**

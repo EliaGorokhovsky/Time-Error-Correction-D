@@ -1,7 +1,6 @@
 module integrators.Integrator;
 
 import data.Ensemble;
-import data.Vector;
 import systems.System;
 
 /**

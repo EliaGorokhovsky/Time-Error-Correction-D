@@ -4,7 +4,6 @@ import std.algorithm;
 import mir.random;
 import mir.random.variable;
 import data.Timeseries;
-import data.Vector;
 import experiment.error.ErrorGenerator;
 import integrators.Integrator;
 

@@ -10,7 +10,6 @@ import std.array; //Used to convert map statement outputs to arrays
 import std.conv; //Used for casting to string
 import mir.random; //Used to generate a random ensemble from a start point 
 import mir.random.variable; //Used to generate a random ensemble from a start point
-import data.Vector; //Used to represent an ensemble member
 import utility.ArrayStats; //Used to find variance and standard deviation
 
 /**

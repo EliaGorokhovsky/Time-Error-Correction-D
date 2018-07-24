@@ -15,7 +15,6 @@ import std.typecons; //Used to handle tuples for posterior information outputs
 import assimilation.Assimilator; //The parent class
 import assimilation.likelihood.Likelihood; //Used for likelihood inputs
 import data.Ensemble; //Used for the ensemble as inputs and outputs 
-import data.Vector; //Used for calculations in 3d
 import utility.ArrayStats; //Used for mean and standard deviation
 import utility.Regression; //Used for regressing increments onto state variables
 

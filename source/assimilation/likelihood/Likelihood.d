@@ -7,8 +7,6 @@
  */
 module assimilation.likelihood.Likelihood;
 
-import data.Vector; //Used for multivariate Gaussians
-
 /**
  * A nullable data-storage class containing various ways to store a likelihood
  */ 
