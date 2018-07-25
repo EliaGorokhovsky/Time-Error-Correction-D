@@ -23,12 +23,12 @@ import utility.Normal; //Used to find the value of the normal probability densit
 class DiscreteGaussianLikelihood(uint dim) : LikelihoodGetter {
 
     Timeseries!(Ensemble!dim) ensembles; ///A timeseries of all past ensembles, in order to get the ensemble at the observation time
-    Integrator integrator; ///A differential equation solver for finding ensemble values when they are not yet defined
+    Integrator!dim integrator; ///A differential equation solver for finding ensemble values when they are not yet defined
 
     /**
      * Constructs the likelihood getter to prepare it for getting likelihood
      */
-    this(Timeseries!(Vector!(double, dim)) observations, Timeseries!(Ensemble!dim) ensembles, Vector!(double, dim) stateError, Integrator integrator) {
+    this(Timeseries!(Vector!(double, dim)) observations, Timeseries!(Ensemble!dim) ensembles, Vector!(double, dim) stateError, Integrator!dim integrator) {
         super(observations, stateError);
         this.ensembles = ensembles;
         this.integrator = integrator;

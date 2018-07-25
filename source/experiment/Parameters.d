@@ -20,7 +20,7 @@ struct Parameters(uint dim) {
     double startTime; ///The initial time with which to associate the initial point
 	double endTime; ///The time at which to stop the experiment
 	double dt; ///The length of each step of the integrator
-	Integrator integrator; ///The integrator used to return points from previous points
+	Integrator!dim integrator; ///The integrator used to return points from previous points
 	//Getting observations
 	double obsStartTime; ///When to start observing
 	double obsEndTime; ///When to stop observing

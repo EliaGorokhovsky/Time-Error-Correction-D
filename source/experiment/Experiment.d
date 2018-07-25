@@ -25,7 +25,7 @@ import systems.System;
  */
 class Experiment(uint dim) {
 
-    Integrator integrator;
+    Integrator!dim integrator;
     ErrorGenerator!dim errorGen;
     Assimilator!dim assimilator;
     EAKF!dim standardEAKF = new EAKF();
@@ -36,7 +36,7 @@ class Experiment(uint dim) {
     Timeseries!(Vector!(double, dim)) observations;
     Timeseries!(Ensemble!dim) ensembleSeries;
 
-    this(Integrator integrator, Assimilator!dim assimilator) {
+    this(Integrator!dim integrator, Assimilator!dim assimilator) {
         this.integrator = integrator;
         this.assimilator = assimilator;
     }

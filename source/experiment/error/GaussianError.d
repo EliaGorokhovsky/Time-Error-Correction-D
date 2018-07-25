@@ -16,11 +16,11 @@ import math.Vector;
 class GaussianError(uint dim) : ErrorGenerator!dim {
 
     Vector!(double, dim) error;
-    Integrator integrator;
+    Integrator!dim integrator;
     Timeseries!(Vector!(double, dim)) truth;
     Random* gen;
 
-    this(Vector!(double, dim) error, Timeseries!(Vector!(double, dim)) truth, Integrator integrator, Random* gen) {
+    this(Vector!(double, dim) error, Timeseries!(Vector!(double, dim)) truth, Integrator!dim integrator, Random* gen) {
         this.error = error;
         this.truth = truth;
         this.integrator = integrator;

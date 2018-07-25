@@ -98,7 +98,7 @@ class Timeseries(T) {
      * TODO: Interpolate instead
      */
     static if (__traits(isSame, TemplateOf!(T), Vector) || __traits(isSame, TemplateOf!(T), Ensemble)) {
-        T value(double time, Integrator integrator = null) {
+        T value(double time, Integrator!(T.dim) integrator = null) {
             //If the time is defined, no need to use the integrator
             if(this.times.any!(a => a.approxEqual(time, 1e-6, 1e-6))) { 
                 double newTime = this.times.find!(a => a.approxEqual(time, 1e-6, 1e-6))[0];
