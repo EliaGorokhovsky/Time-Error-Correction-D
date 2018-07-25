@@ -12,19 +12,20 @@ import std.math; //Used to check approximate equality among doubles
 import assimilation.likelihood.Likelihood; //Used to output a standard data storage class
 import data.Ensemble; //Used to standardize discrete likelihood output, though this class does not use them
 import data.Timeseries; //Used to keep track of observations
+import math.Vector; //Used for data storage
 
 /**
  * Gets the likelihood for assimilation given information about the system
  */
-class LikelihoodGetter {
+class LikelihoodGetter(uint dim) {
 
-    Timeseries!Vector observations; /// A list of all past observations that the likelihood getter is able to get likelihood for
-    Vector stateError; //A vector representing the standard deviation of the observation error, which should be given a priori by the instrument manufacturer
+    Timeseries!(Vector!(double, dim)) observations; /// A list of all past observations that the likelihood getter is able to get likelihood for
+    Vector!(double, dim) stateError; //A vector representing the standard deviation of the observation error, which should be given a priori by the instrument manufacturer
 
     /**
      * Constructs the likelihood getter with a priori information about observations
      */ 
-    this(Timeseries!Vector observations, Vector stateError) {
+    this(Timeseries!(Vector!(double, dim)) observations, Vector!(double, dim) stateError) {
         this.observations = observations;
         this.stateError = stateError; //We assume this is constant over time, but it might not be
     }
