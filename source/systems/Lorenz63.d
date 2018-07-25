@@ -1,13 +1,14 @@
 module systems.Lorenz63;
 
 import std.conv;
+import math.Vector;
 import systems.System;
 
 /** 
  * A three-dimensional hydrodynamics toy model defined by Lorenz (1963)
  * Creates a butterfly attractor in phase space
  */
-class Lorenz63 : System {
+class Lorenz63 : System!3 {
 
     double rho;
     double sigma;
@@ -19,11 +20,11 @@ class Lorenz63 : System {
         this.beta = beta;
     }
 
-    override Vector opCall(Vector state) {
-        return Vector(
-            this.sigma * (state.y - state.x),
+    override Vector!(double, 3) opCall(Vector!(double, 3) state) {
+        return new Vector!(double, 3)(
+            [this.sigma * (state.y - state.x),
             state.x * (this.rho - state.z) - state.y,
-            state.x * state.y - this.beta * state.z
+            state.x * state.y - this.beta * state.z]
         );
     }
 
@@ -39,6 +40,6 @@ unittest {
 
     writeln("\nUNITTEST: Lorenz63");
     Lorenz63 L63 = new Lorenz63();
-    writeln("Application of L63 to (1, 1, 1) with parameters (1, 1, 1) results in velocity ", L63(Vector(1, 1, 1)));
+    writeln("Application of L63 to (1, 1, 1) with parameters (1, 1, 1) results in velocity ", L63(new Vector!(double, 3)(1, 1, 1)));
 
 }
