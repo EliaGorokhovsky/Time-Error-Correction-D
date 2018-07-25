@@ -13,9 +13,9 @@ import data.Ensemble; //Used for input and output ensembles
  * An overarching definition of what makes a data assimilation method
  * Defines the function of an assimilation step
  */
-abstract class Assimilator {
+abstract class Assimilator(uint dim) {
 
-    Ensemble opCall(Ensemble prior);    ///All data assimilation methods should have functionality for each assimilation step
-    void setLikelihood(Likelihood likelihood); ///All data assimilation methods should accept likelihoods for assimilation
+    Ensemble!dim opCall(Ensemble!dim prior);    ///All data assimilation methods should have functionality for each assimilation step
+    void setLikelihood(Likelihood!dim likelihood); ///All data assimilation methods should accept likelihoods for assimilation
 
 }
