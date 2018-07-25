@@ -18,6 +18,7 @@ import std.typecons; //Used for tuples for sorting pairs of items
 import assimilation.Assimilator; //Parent class
 import assimilation.likelihood.Likelihood; //Used for input likelihood
 import data.Ensemble; //Used for input and output ensemble
+import math.Vector; //Used for data storage
 import experiment.Analytics; //Used to check if an array has NaN values
 import utility.ArrayStats; //Used for standard deviation calculations for Gaussian tails
 import utility.Math; //Used for approximate equality between doubles
@@ -28,21 +29,17 @@ import utility.Sort; //Used to sort associated pairs of items
 /** 
  * The Rank Histogram Filter (Anderson 2010) to apply ensemble filtering with discretely defined likelihood distributions
  */
-class RHF : Assimilator {
+class RHF(uint dim) : Assimilator!dim {
 
-    double[] xLikelihood; ///The probabilities for the x-values of the ensemble
-    double[] yLikelihood; ///The probabilities for the y-values of the ensemble
-    double[] zLikelihood; ///The probabilities for the z-values of the ensemble
+    double[dim][] likelihoods; ///Probabilities associated with the values of the ensemble, dimensionally independent
     bool rectangularQuadrature; ///Whether rectangular or trapezoidal quadrature will be used to calculate probabilities with likelihood
 
     /**
      * Constructs the RHF
      * By default, rectangular quadrature is true
      */
-    this(Likelihood likelihood, bool rectangularQuadrature = true) {
-        this.xLikelihood = likelihood.xLikelihood;
-        this.yLikelihood = likelihood.yLikelihood;
-        this.zLikelihood = likelihood.zLikelihood;
+    this(Likelihood!dim likelihood, bool rectangularQuadrature = true) {
+        this.likelihoods = likelihood.likelihoods;
         this.rectangularQuadrature = rectangularQuadrature;
     }
 
@@ -59,47 +56,30 @@ class RHF : Assimilator {
      * Sets the likelihood for the assimilator without making a new one
      * Takes the output of a likelihoodGetter
      */
-    override void setLikelihood(Likelihood likelihood) {
-        this.xLikelihood = likelihood.xLikelihood;
-        this.yLikelihood = likelihood.yLikelihood;
-        this.zLikelihood = likelihood.zLikelihood;        
+    override void setLikelihood(Likelihood!dim likelihood) {
+        this.likelihoods = likelihood.likelihoods;       
     }
 
     /**
      * Overloading to allow for calling the assimilator as a function
      * This RHF gets observation increments for a variable, regresses it onto all three variables, then repeats for the other variables
      */
-    override Ensemble opCall(Ensemble prior) {
+    override Ensemble!dim opCall(Ensemble!dim prior) {
         //Ensure none of the likelihoods have NaN (not a number) in them
-        assert(!checkNaN(this.xLikelihood), "NaN in X likelihood");
-        assert(!checkNaN(this.xLikelihood), "NaN in Y likelihood");
-        assert(!checkNaN(this.xLikelihood), "NaN in Z likelihood");
-        assert(!checkNaN(prior.xValues), "NaN in X prior");
-        assert(!checkNaN(prior.yValues), "NaN in Y prior");
-        assert(!checkNaN(prior.zValues), "NaN in Z prior");
+        assert(!this.likelihoods.any!checkNaN, "NaN in likelihood");
+        assert(!prior.valueLists.any!checkNaN, "NaN in prior");
         //Copy the ensemble so as to not change it while calculating
-        Ensemble output = prior.copy();
-        //Regress x observation increments onto y and z
-        double ySlope = regressionSlope(output.xValues, output.yValues);
-        double zSlope = regressionSlope(output.xValues, output.zValues);
-        double[] obsIncrements = this.getObservationIncrements(output.xValues, this.xLikelihood);
-        foreach(i; 0..obsIncrements.length) { output.members[i].x = output.members[i].x + obsIncrements[i]; } //Regression of a variable onto itself returns 1
-        foreach(i; 0..obsIncrements.length) { output.members[i].y = output.members[i].y + ySlope * obsIncrements[i]; }
-        foreach(i; 0..obsIncrements.length) { output.members[i].z = output.members[i].z + zSlope * obsIncrements[i]; }
-        //Regress y observation increments onto x and z
-        double xSlope = regressionSlope(output.yValues, output.xValues);
-        zSlope = regressionSlope(output.yValues, output.zValues);
-        obsIncrements = this.getObservationIncrements(output.yValues, this.yLikelihood);
-        foreach(i; 0..obsIncrements.length) { output.members[i].x = output.members[i].x + xSlope * obsIncrements[i]; }
-        foreach(i; 0..obsIncrements.length) { output.members[i].y = output.members[i].y + obsIncrements[i]; } //Regression of a variable onto itself returns 1
-        foreach(i; 0..obsIncrements.length) { output.members[i].z = output.members[i].z + zSlope * obsIncrements[i]; }
-        //Regress z observation increments onto x and y
-        xSlope = regressionSlope(output.zValues, output.xValues);
-        ySlope = regressionSlope(output.zValues, output.yValues);
-        obsIncrements = this.getObservationIncrements(output.zValues, this.zLikelihood);
-        foreach(i; 0..obsIncrements.length) { output.members[i].x = output.members[i].x + xSlope * obsIncrements[i]; }
-        foreach(i; 0..obsIncrements.length) { output.members[i].y = output.members[i].y + ySlope * obsIncrements[i]; }
-        foreach(i; 0..obsIncrements.length) { output.members[i].z = output.members[i].z + obsIncrements[i]; } //Regression of a variable onto itself returns 1
+        Ensemble!dim output = prior.copy();
+        //Regress the observation increments for each variable onto the other variables
+        static foreach (i; 0..dim) {
+            double[dim] slopes = iota(0, dim, 1).map!(a => regressionSlope(output.valueLists[i], output.valueLists[a]));
+            double[] obsIncrements = this.getObservationIncrements(output.valueLists[i], posteriorMean[i], posteriorSpread[i]);
+            static foreach (j; 0..dim) {
+                foreach (index, increment; obsIncrements.parallel) {
+                    output.members[index][j] = output.members[index][j] + slopes[j] * increment;
+                }
+            }
+        }
         return output;
     }
 
@@ -289,8 +269,8 @@ unittest {
 
     //Ensure results are similar to EAKF
     writeln("\nUNITTEST: RHF");
-    RHF rhf1 = new RHF(new Likelihood([0, 0, 0.25, 0.5, 1, 0.5, 0.25, 0], [0, 0, 0.25, 0.5, 1, 0.5, 0.25, 0], [0, 0, 0.25, 0.5, 1, 0.5, 0.25, 0]), true);
-    Ensemble test1 = new Ensemble(
+    RHF!3 rhf1 = new RHF!3(new Likelihood([0, 0, 0.25, 0.5, 1, 0.5, 0.25, 0], [0, 0, 0.25, 0.5, 1, 0.5, 0.25, 0], [0, 0, 0.25, 0.5, 1, 0.5, 0.25, 0]), true);
+    Ensemble!3 test1 = new Ensemble!3(
         [1, 2, 3, 4, 5, 6 ,7, 8], 
         [1, 2, 3, 4, 5, 6 ,7, 8], 
         [1, 2, 3, 4, 5, 6 ,7, 8]
@@ -303,7 +283,7 @@ unittest {
         [0, 0.1, 0.2, 0.3, 0.3, 0.4, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.6, 0.6, 0.6, 0.7, 0.7, 0.8, 0.9, 1],
         [0, 0.1, 0.2, 0.3, 0.3, 0.4, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.6, 0.6, 0.6, 0.7, 0.7, 0.8, 0.9, 1]
     );*/
-    Ensemble result1 = rhf1(test1);
+    Ensemble!3 result1 = rhf1(test1);
     //Ensemble result2 = rhf2(test2);
     writeln("Ensemble with mean ", test1.eMean, 
     " and standard deviation ", test1.eStandardDeviation, 
