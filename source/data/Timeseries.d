@@ -9,8 +9,10 @@ module data.Timeseries;
 
 import std.algorithm; //Used for sorting when finding dt
 import std.math; //Used for approximate equality among doubles
+import std.traits; //Used to check if the timeseries type is of a Vector or Ensemble template
 import data.Ensemble; //Used as an input type for an overload of value() that interpolates
 import integrators.Integrator; //Used to interpolate for getting value at undefined times
+import math.Vector; //Used to define possible data storage objects that can be interpolated
 
 /**
  * Essentially an array of something
@@ -55,7 +57,7 @@ class Timeseries(T) {
     /**
      * If the timeseries contains ensembles, returns a timeseries of their means
      */
-    static if(is(T == Ensemble)) {
+    static if(__traits(isSame, TemplateOf!(T), Ensemble)) {
         @property Timeseries!Vector meanSeries() {
             assert(this.members.length == this.times.length);
             Timeseries!Vector means = new Timeseries!Vector();
@@ -95,7 +97,7 @@ class Timeseries(T) {
      * If there is no corresponding state in the timeseries, use an integrator
      * TODO: Interpolate instead
      */
-    static if (is(T == Vector) || is(T == Ensemble)) {
+    static if (__traits(isSame, TemplateOf!(T), Vector) || __traits(isSame, TemplateOf!(T), Ensemble)) {
         T value(double time, Integrator integrator = null) {
             //If the time is defined, no need to use the integrator
             if(this.times.any!(a => a.approxEqual(time, 1e-6, 1e-6))) { 
@@ -129,12 +131,12 @@ unittest {
     import data.Vector;
 
     writeln("\nUNITTEST: Timeseries");
-    Timeseries!Vector timeseries= new Timeseries!Vector();
+    Timeseries!(Vector!(double, 3)) timeseries= new Timeseries!(Vector!(double, 3))();
     class Test : System {
-        override Vector opCall(Vector state) { return Vector(1, 1, 1); }
+        override Vector opCall(Vector!(double, 3) state) { return new Vector!(double, 3)(1); }
     }
     foreach(i; 0..10) {
-        timeseries.add(i, Vector(i, i, i));
+        timeseries.add(i, new Vector!(double, 3)(i));
     }
     writeln("Times: ", timeseries.times);
     writeln("Time Series: ", timeseries.members);
