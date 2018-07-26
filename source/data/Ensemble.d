@@ -201,7 +201,7 @@ unittest {
     
     writeln("\nUNITTEST: Ensemble");
     Vector base = Vector(0, 0, 0);
-    Random gen = Random(unpredictableSeed);
+    Random gen = Random(1);
     Ensemble ensemble = new Ensemble(base, 20, Vector(0.01, 0.01, 0.01), &gen);
     writeln("Ensemble with base (0, 0, 0) and error (0.01, 0.01, 0.01) has x values ", ensemble.xValues);
     writeln("Ensemble mean in x is ", ensemble.eMean.x);
