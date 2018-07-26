@@ -39,21 +39,21 @@ class Ensemble(uint dim) {
      * Gets a Vector containing the mean values of the ensemble
      */
     @property Vector!(double, dim) eMean() {
-        return new Vector!(double, dim)(this.valueLists.to!(double[][]).map!(a => a.mean).array);
+        return new Vector!(double, dim)(this.valueLists[].map!(a => a.mean).array);
     }
 
     /**
      * Gets a vector containing variance for the ensemble members in each variable
      */
     @property Vector!(double, dim) eVariance() {
-        return new Vector!(double, dim)(this.valueLists.to!(double[][]).map!(a => a.variance!1).array);
+        return new Vector!(double, dim)(this.valueLists[].map!(a => a.variance!1).array);
     }
 
     /**
      * Gets a vector containing standard deviation for the ensemble members in each variable
      */
     @property Vector!(double, dim) eStandardDeviation() {
-        return new Vector!(double, dim)(this.valueLists.to!(double[][]).map!(a => a.standardDeviation!1).array);
+        return new Vector!(double, dim)(this.valueLists[].map!(a => a.standardDeviation!1).array);
     }
 
     /** 

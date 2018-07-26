@@ -4,7 +4,6 @@ import std.algorithm;
 import std.conv;
 import std.math;
 import std.range;
-import std.stdio;
 import std.traits;
 import data.Ensemble;
 import data.Timeseries;

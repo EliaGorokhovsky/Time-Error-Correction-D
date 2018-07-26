@@ -4,7 +4,6 @@ import std.algorithm;
 import std.datetime;
 import std.math;
 import std.range;
-import std.stdio;
 import std.typecons;
 import std.file;
 import assimilation.Assimilator;
@@ -87,7 +86,7 @@ class Experiment(uint dim) {
      * Runs an ensemble over an interval
      * Spin-up time: no assimilation
      */
-    Timeseries!(Ensemble!dim) getEnsembleTimeseries(bool experiment)(double startTime, double endTime, double dt, double spinup, double priming, Ensemble!dim ensemble) {
+    Timeseries!(Ensemble!dim) getEnsembleTimeseries(bool experiment)(double startTime, double endTime, double dt, double spinup, double priming, Ensemble!dim ensemble) {        
         Timeseries!(Ensemble!dim) ensembleSeries = new Timeseries!(Ensemble!dim)();
         ensembleSeries.add(0, ensemble);
         assert(ensembleSeries.members !is null, "Ensemble series is null");
