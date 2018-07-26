@@ -82,52 +82,70 @@ void run(Parameters!dimensions params, double observationInterval, double timeEr
 	} else if(params.config == RunConfigurations.CONTROL_RMSE) {
 		writeln("Control:");
 		Experiment!dimensions control = new Experiment!dimensions(params.integrator, params.controlAssimilator);
+		static if (verboseRun) writeln("Successfully initialized experiment.");
 		//Get truth
 		control.getTruth(params.startState, params.startTime, params.endTime, params.dt);
+		static if (verboseRun) writeln("Successfully got true timeseries.");
 		//Get observations
 		control.setError(new GaussianTimeError!dimensions(timeError, actualError, control.truth, params.integrator, &gen));
+		static if (verboseRun) writeln("Successfully set error generator.");
 		control.getObservations(params.obsStartTime, params.obsEndTime, observationInterval);
+		static if (verboseRun) writeln("Successfully generated observations.");
 		//Do assimilation
 		control.setLikelihood(new LikelihoodGetter!dimensions(control.observations, expectedError));
+		static if (verboseRun) writeln("Successfully set likelihood.");
 		control.getEnsembleTimeseries!false(
 			params.ensembleStartTime, params.ensembleEndTime, params.ensembledt, params.spinup, 0, new Ensemble!dimensions(params.ensembleGenesis, params.ensembleSize, params.ensembleDeviation, &gen)
 		);
+		static if (verboseRun) writeln("Successfully ran ensemble.");
 		immutable double controlRMSE = RMSE!dimensions(control.ensembleSeries, control.truth);
 		writeln("Control RMSE for time error ", timeError, " is ", controlRMSE);
 		File(params.datafile, "a").writeln(seed, ", ", observationInterval, ", ", timeError, ", ", controlRMSE);
 	} else if(params.config == RunConfigurations.TREATMENT_RMSE) {
 		writeln("Experiment:");
 		Experiment!dimensions treatment = new Experiment!dimensions(params.integrator, params.experimentalAssimilator);
+		static if (verboseRun) writeln("Successfully initialized experiment.");
 		treatment.getTruth(params.startState, params.startTime, params.endTime, params.dt);
+		static if (verboseRun) writeln("Successfully got true timeseries.");
 		treatment.setError(new GaussianTimeError!dimensions(timeError, actualError, treatment.truth, params.integrator, &gen));
+		static if (verboseRun) writeln("Successfully set error generator.");
 		treatment.getObservations(params.obsStartTime, params.obsEndTime, observationInterval);
+		static if (verboseRun) writeln("Successfully generated observations.");
 		treatment.setLikelihood(
 			new DiscreteExperimentalLikelihood!dimensions(
 				treatment.observations, expectedError, params.integrator, params.minimumOffset, params.maximumOffset, params.bins, &gen
 			)
 		);
 		treatment.standardLikelihood = new LikelihoodGetter!dimensions(treatment.observations, expectedError);
+		static if (verboseRun) writeln("Successfully set likelihood.");
 		treatment.getEnsembleTimeseries!true(
 			params.ensembleStartTime, params.ensembleEndTime, params.ensembledt, params.spinup, 5, new Ensemble!dimensions(params.ensembleGenesis, params.ensembleSize, params.ensembleDeviation, &gen)
 		);
+		static if (verboseRun) writeln("Successfully ran ensemble.");
 		immutable double treatmentRMSE = RMSE!dimensions(treatment.ensembleSeries, treatment.truth);
 		File(params.datafile, "a").writeln(seed, ", ", observationInterval, ", ", timeError, ", " , treatmentRMSE);
 		writeln("Treatment RMSE for time error ", timeError, " is ", treatmentRMSE);
 	} else if(params.config == RunConfigurations.INFERRED_TIME_ERROR) {
 		writeln("Experiment:");
 		Experiment!dimensions treatment = new Experiment!dimensions(params.integrator, params.experimentalAssimilator);
+		static if (verboseRun) writeln("Successfully initialized experiment.");
 		treatment.getTruth(params.startState, params.startTime, params.endTime, params.dt);
+		static if (verboseRun) writeln("Successfully got true timeseries.");
 		treatment.setError(new GaussianTimeError!dimensions(timeError, actualError, treatment.truth, params.integrator, &gen));
+		static if (verboseRun) writeln("Successfully set error generator.");
 		treatment.getObservations(params.obsStartTime, params.obsEndTime, observationInterval);
+		static if (verboseRun) writeln("Successfully generated observations.");
 		treatment.setLikelihood(
 			new DiscreteExperimentalLikelihood!dimensions(
 				treatment.observations, expectedError, params.integrator, params.minimumOffset, params.maximumOffset, params.bins, &gen
 			)
 		);
 		treatment.standardLikelihood = new LikelihoodGetter!dimensions(treatment.observations, expectedError);
+		static if (verboseRun) writeln("Successfully set likelihood.");
 		treatment.getEnsembleTimeseries!true(
 			params.ensembleStartTime, params.ensembleEndTime, params.ensembledt, params.spinup, 2, new Ensemble!dimensions(params.ensembleGenesis, params.ensembleSize, params.ensembleDeviation, &gen)
 		);
+		static if (verboseRun) writeln("Successfully ran ensemble.");
 		DiscreteExperimentalLikelihood!dimensions treatmentLikelihood = cast(DiscreteExperimentalLikelihood!dimensions) treatment.likelihoodGetter;
 		File(params.datafile, "a").writeln(seed, ", ", observationInterval, ", ", timeError, ", ", treatmentLikelihood.expectedTime, ",", treatmentLikelihood.timeDeviation, ",,", treatmentLikelihood.timeLikelihood.to!string[1 .. $ - 1]);
 		writeln("Inferred time error for time error ", timeError, " is ", treatmentLikelihood.timeDeviation);
