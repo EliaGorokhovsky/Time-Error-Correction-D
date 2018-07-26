@@ -1,4 +1,4 @@
-module systems.TestSystem;
+module systems.Line;
 
 import std.conv;
 import math.Vector;
@@ -11,11 +11,11 @@ class Line(uint dim) : System!dim {
     
     Vector!(double, dim) slope;
 
-    this(Vector!(double, dim) slope = Vector!(double, dim)(1)) {
+    this(Vector!(double, dim) slope = new Vector!(double, dim)(1)) {
         this.slope = slope;
     }
 
-    override Vector opCall(Vector state) {
+    override Vector!(double, dim) opCall(Vector!(double, dim) state) {
         return this.slope;
     }
 

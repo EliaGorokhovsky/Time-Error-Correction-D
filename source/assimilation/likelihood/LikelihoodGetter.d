@@ -33,16 +33,16 @@ class LikelihoodGetter(uint dim) {
     /**
      * Returns likelihood packaged with mean and deviation for a given time
      */
-    Likelihood opCall(double time) {
+    Likelihood!dim opCall(double time) {
         //Ensure an observation exists at that time
         assert(this.observations.times.any!(a => a.approxEqual(time, 1e-6, 1e-6)), "Time not in list");
-        return new Likelihood(this.observations.value(time), this.stateError);
+        return new Likelihood!dim(this.observations.value!dim(time), this.stateError);
     }
 
     /**
      * Returns likelihood given ensembles
      */
-    Likelihood opCall(double time, Timeseries!Ensemble ensembles) {
+    Likelihood!dim opCall(double time, Timeseries!(Ensemble!dim) ensembles) {
         return null;
     }
 

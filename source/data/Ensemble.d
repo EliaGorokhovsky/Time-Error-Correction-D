@@ -25,8 +25,8 @@ class Ensemble(uint dim) {
     /**
      * Returns a 2d array representing the transpose of the ensemble - arrays of its members' dimensional values
      */
-    @property double[dim][] valueLists() {
-        double[dim][] lists;
+    @property double[][dim] valueLists() {
+        double[][dim] lists;
         foreach (component; this.members) {
             static foreach (i; 0..dim) {
                 lists[i] ~= component[i];
@@ -39,21 +39,21 @@ class Ensemble(uint dim) {
      * Gets a Vector containing the mean values of the ensemble
      */
     @property Vector!(double, dim) eMean() {
-        return new Vector!(double, dim)(this.valueLists.map!(a => a.mean).array);
+        return new Vector!(double, dim)(this.valueLists.to!(double[][]).map!(a => a.mean).array);
     }
 
     /**
      * Gets a vector containing variance for the ensemble members in each variable
      */
     @property Vector!(double, dim) eVariance() {
-        return new Vector!(double, dim)(this.valueLists.map!(a => a.variance!1).array);
+        return new Vector!(double, dim)(this.valueLists.to!(double[][]).map!(a => a.variance!1).array);
     }
 
     /**
      * Gets a vector containing standard deviation for the ensemble members in each variable
      */
     @property Vector!(double, dim) eStandardDeviation() {
-        return new Vector!(double, dim)(this.valueLists.map!(a => a.standardDeviation!1).array);
+        return new Vector!(double, dim)(this.valueLists.to!(double[][]).map!(a => a.standardDeviation!1).array);
     }
 
     /** 

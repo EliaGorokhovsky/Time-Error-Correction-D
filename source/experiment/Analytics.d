@@ -15,7 +15,7 @@ import math.Vector;
  * The RMSE is a measure of how accurate an ensemble is
  * RMSE is the square root of the mean of the squares deviations of the ensemble means
  */
-double RMSE(uint dim)(Timeseries!(Ensemble!dim) data, Timeseries!(Vector!double, dim) truth) {
+double RMSE(uint dim)(Timeseries!(Ensemble!dim) data, Timeseries!(Vector!(double, dim)) truth) {
     assert(data.members.length == truth.members.length, "Unequal dataset lengths: " ~ data.members.length.to!string ~ " and " ~ truth.members.length.to!string);
     double sumOfSquares = 0;
     foreach(i; 0..truth.members.length) {

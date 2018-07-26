@@ -18,12 +18,12 @@ class GaussianTimeError(uint dim) : ErrorGenerator!dim {
 
     Vector!(double, dim) error;
     double timeError;
-    Integrator integrator;
+    Integrator!dim integrator;
     Timeseries!(Vector!(double, dim)) truth;
     double firstTime;
     Random* gen;
 
-    this(double timeError, Vector!(double, dim) error, Timeseries!(Vector!(double, dim)) truth, Integrator integrator, Random* gen) {
+    this(double timeError, Vector!(double, dim) error, Timeseries!(Vector!(double, dim)) truth, Integrator!dim integrator, Random* gen) {
         this.timeError = timeError;
         this.error = error;
         this.truth = truth;

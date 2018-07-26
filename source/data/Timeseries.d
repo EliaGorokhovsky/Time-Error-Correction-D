@@ -58,9 +58,9 @@ class Timeseries(T) {
      * If the timeseries contains ensembles, returns a timeseries of their means
      */
     static if(__traits(isSame, TemplateOf!(T), Ensemble)) {
-        @property Timeseries!Vector meanSeries() {
+        @property Timeseries!(Vector!(double, dim)) meanSeries(uint dim)() {
             assert(this.members.length == this.times.length);
-            Timeseries!Vector means = new Timeseries!Vector();
+            Timeseries!(Vector!(double, dim)) means = new Timeseries!(Vector!(double, dim))();
             //Fils the new timeseries
             foreach(i; 0..this.members.length) {
                 means.add(this.times[i], this.members[i].eMean);
@@ -98,7 +98,7 @@ class Timeseries(T) {
      * TODO: Interpolate instead
      */
     static if (__traits(isSame, TemplateOf!(T), Vector) || __traits(isSame, TemplateOf!(T), Ensemble)) {
-        T value(double time, Integrator!(T.dim) integrator = null) {
+        T value(uint dim)(double time, Integrator!dim integrator = null) {
             //If the time is defined, no need to use the integrator
             if(this.times.any!(a => a.approxEqual(time, 1e-6, 1e-6))) { 
                 double newTime = this.times.find!(a => a.approxEqual(time, 1e-6, 1e-6))[0];

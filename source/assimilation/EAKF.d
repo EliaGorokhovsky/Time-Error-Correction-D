@@ -64,15 +64,17 @@ class EAKF(uint dim) : Assimilator!dim {
      */
     override Ensemble!dim opCall(Ensemble!dim prior) {
         //Gets the posterior in the form of a mean and standard deviation in 3d
-        Tuple!(Vector, Vector) posteriorMetrics = this.getPosterior(prior);
+        Tuple!(Vector!(double, dim), Vector!(double, dim)) posteriorMetrics = this.getPosterior(prior);
         Vector!(double, dim) posteriorMean = posteriorMetrics[0];
         Vector!(double, dim) posteriorSpread = posteriorMetrics[1];
         //Copies the prior ensemble to avoid changing it before doing calculations
         Ensemble!dim output = prior.copy();
         //Regress the observation increments for each variable onto the other variables
+        double[dim] slopes;
+        double[] obsIncrements;
         static foreach (i; 0..dim) {
-            double[dim] slopes = iota(0, dim, 1).map!(a => regressionSlope(output.valueLists[i], output.valueLists[a]));
-            double[] obsIncrements = this.getObservationIncrements(output.valueLists[i], posteriorMean[i], posteriorSpread[i]);
+            slopes = iota(0, dim, 1).map!(a => regressionSlope(output.valueLists[i], output.valueLists[a])).array;
+            obsIncrements = this.getObservationIncrements(output.valueLists[i], posteriorMean[i], posteriorSpread[i]);
             static foreach (j; 0..dim) {
                 foreach (index, increment; obsIncrements.parallel) {
                     output.members[index][j] = output.members[index][j] + slopes[j] * increment;

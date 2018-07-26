@@ -28,7 +28,7 @@ class Experiment(uint dim) {
     Integrator!dim integrator;
     ErrorGenerator!dim errorGen;
     Assimilator!dim assimilator;
-    EAKF!dim standardEAKF = new EAKF();
+    EAKF!dim standardEAKF = new EAKF!dim();
     LikelihoodGetter!dim standardLikelihood;
     LikelihoodGetter!dim likelihoodGetter;
 
