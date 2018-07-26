@@ -37,7 +37,7 @@ unittest {
     import std.stdio;
 
     writeln("\nUNITTEST: Circle");
-    Circle circle = new Circle();
+    TestSystem circle = new TestSystem();
     writeln("Application of Circle to (1, 1, 1) with parameters (1, 1, 1) results in velocity ", circle(Vector(1, 1, 1)));
 
 }
