@@ -449,7 +449,7 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
             binQuantities ~= 0;
         }
         //The observation error covariance is 0 outside the diagonal because we assume obs error is dimensionally independent
-        Matrix!(double, 3, 3) obsErrorCovariance = new Matrix!(double, dim, dim)(0);
+        Matrix!(double, dim, dim) obsErrorCovariance = new Matrix!(double, dim, dim)(0);
         static foreach (i; 0..dim) {
             obsErrorCovariance[i][i] = this.stateError[i];
         }

@@ -55,6 +55,7 @@ struct Parameters(uint dim) {
         "\nFilename: " ~ this.datafile ~
         "\nRun Configuration: " ~ this.config ~
         "\nTag: " ~ this.tag ~
+        "\nDimensions: " ~ dim.to!string ~
         "\nObservation Intervals: " ~ this.observationIntervals.to!string ~
         "\nTime Errors: " ~ this.timeErrors.to!string ~
         "\nState Errors: " ~ this.errors.to!string ~
