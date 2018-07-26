@@ -216,9 +216,9 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
             }
         }
         //Find the mean of the pseudo-observations
-        Vector!(double, dim) meanVector = new Vector!(double, dim)(pseudoMeasurements.to!(double[][]).map!(a => a.mean).array);
+        Vector!(double, dim) meanVector = new Vector!(double, dim)(pseudoMeasurements[].map!(a => a.mean).array);
         //Find the standard deviation of the pseudo-observations
-        Vector!(double, dim) deviationVector = new Vector!(double, dim)(pseudoMeasurements.to!(double[][]).map!(a => a.standardDeviation!1).array);
+        Vector!(double, dim) deviationVector = new Vector!(double, dim)(pseudoMeasurements[].map!(a => a.standardDeviation!1).array);
         //Return as a Gaussian likelihood with the above mean and standard deviation
         return new Likelihood!dim(meanVector, deviationVector);
     }
@@ -275,9 +275,9 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
             }
         }
         //Find the mean of the pseudo-observations
-        Vector!(double, dim) meanVector = new Vector!(double, dim)(pseudoMeasurements.to!(double[][]).map!(a => a.mean).array);
+        Vector!(double, dim) meanVector = new Vector!(double, dim)(pseudoMeasurements[].map!(a => a.mean).array);
         //Find the standard deviation of the pseudo-observations
-        Vector!(double, dim) deviationVector = new Vector!(double, dim)(pseudoMeasurements.to!(double[][]).map!(a => a.standardDeviation!1).array);
+        Vector!(double, dim) deviationVector = new Vector!(double, dim)(pseudoMeasurements[].map!(a => a.standardDeviation!1).array);
         //Return as a Gaussian likelihood with the above mean and standard deviation
         return new Likelihood!dim(meanVector, deviationVector);
     }
