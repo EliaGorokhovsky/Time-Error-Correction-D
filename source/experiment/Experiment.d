@@ -137,7 +137,9 @@ unittest {
     process.getObservations(0, 10, 3);
     writeln("Observing every 3 seconds with std (0.1, 0.1, 0.1) returns ", process.observations.members);
     process.setLikelihood(new LikelihoodGetter!3(process.observations, new Vector!(double, 3)(0.1)));
-    process.getEnsembleTimeseries!false(0, 10, 1, 4, 0, new Ensemble!3(new Vector!(double, 3)(0), 3, new Vector!(double, 3)(0.1), &gen));
+    Ensemble!3 base = new Ensemble!3(new Vector!(double, 3)(0), 3, new Vector!(double, 3)(0.1), &gen);
+    writeln("Starting experiment with ensemble: ", base.members);
+    process.getEnsembleTimeseries!false(0, 10, 1, 4, 0, base);
     writeln("RMSE is ", RMSE(process.ensembleSeries, process.truth));
 
 }

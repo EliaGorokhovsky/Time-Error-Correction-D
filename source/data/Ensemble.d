@@ -69,9 +69,16 @@ class Ensemble(uint dim) {
      * Generates ensemble with independent Gaussian variation from a base point 
      */
     this(Vector!(double, dim) base, int size, Vector!(double, dim) error, Random* gen) {
+        NormalVariable!double[dim] vars;
+        double[dim] point;
+        static foreach (i; 0..dim) {
+            vars[i] = NormalVariable!double(base[i], error[i]);
+        }
         foreach(i; 0..size) {
-            double[dim] vars = iota(0, dim, 1).map!(a => NormalVariable!double(base[a], error[a])(*gen)).array;
-            this.members ~= new Vector!(double, dim)(vars);
+            static foreach (j; 0..dim) {
+                point[j] = vars[j](*gen);
+            }
+            this.members ~= new Vector!(double, dim)(point);
         }
     }
 
