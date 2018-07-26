@@ -8,6 +8,7 @@ module data.Ensemble;
 import std.algorithm; //Used for map statements
 import std.array; //Used to convert map statement outputs to arrays
 import std.conv; //Used for casting to string
+import std.parallelism; //Used for modifying all members of the ensemble at once
 import std.range; //Used to generate stepped ranges of numbers
 import mir.random; //Used to generate a random ensemble from a start point 
 import mir.random.variable; //Used to generate a random ensemble from a start point
@@ -114,22 +115,24 @@ class Ensemble(uint dim) {
         else static if (op == "/") return new Ensemble!dim(this.members.map!(a => this.eMean + (a - this.eMean) / scalar).array);
         else return null;
     }
-
+    
     /**
      * Handles shifting the ensemble without creating a new one
      */
     void opOpAssign(string op)(Vector!(double, dim) other) {
-        static if (op == "+=") this.members = this.members.map!(a => a + other).array;
-        else static if (op == "-=") this.members = this.members.map!(a => a - other).array;
+        foreach (ref member; this.members.parallel) {
+            mixin("member" ~ op ~ "= other;");
+        }
     }
 
     /**
      * Handles scaling the ensemble without creating a new one
      */
     void opOpAssign(string op)(double scalar) {
-        Vector!(double, dim) average = this.eMean;
-        static if (op == "*=") this.members = this.members.map!(a => average + (a - average) * scalar).array;
-        else static if (op == "/=") this.members = this.members.map!(a => average + (a - average) / scalar).array;
+        Vector!(double, dim) average = new Vector!(double, dim)(this.eMean);
+        foreach (ref member; this.members.parallel) {
+            mixin("member = average + (member - average) " ~ op ~ " scalar;");
+        }
     }
 
     /**
