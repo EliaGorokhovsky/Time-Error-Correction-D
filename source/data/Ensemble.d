@@ -86,8 +86,8 @@ class Ensemble(uint dim) {
      * Constructor for an ensemble
      * Constructs an ensemble using three lists of values that become xValues, yValues, and zValues
      */
-    this(double[dim][] valueLists) {
-        assert(valueLists.all!(a => a.length == valueLists[0].length));
+    this(double[][dim] valueLists) {
+        assert(valueLists[].all!(a => a.length == valueLists[0].length));
         double[dim] vectorComponents;
         foreach(i; 0..valueLists[0].length) {
             static foreach (j; 0..dim) {
@@ -156,7 +156,7 @@ unittest {
     Vector!(double, 3) base = new Vector!(double, 3)(0);
     Random gen = Random(unpredictableSeed);
     Ensemble!3 ensemble = new Ensemble!3(base, 20, new Vector!(double, 3)(0.01), &gen);
-    writeln("Ensemble with base (0, 0, 0) and error (0.01, 0.01, 0.01) has x values ", ensemble.xValues);
+    writeln("Ensemble with base (0, 0, 0) and error (0.01, 0.01, 0.01) has x values ", ensemble.valueLists[0]);
     writeln("Ensemble mean in x is ", ensemble.eMean.x);
     writeln("Ensemble standard deviation in x is ", ensemble.eStandardDeviation.x);
     ensemble += new Vector!(double, 3)(2);

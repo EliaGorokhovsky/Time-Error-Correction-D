@@ -66,13 +66,13 @@ unittest {
 
     writeln("\nUNITTEST: RK4");
     writeln("Differentially defined system: dx/dt = 1, dy/dt = 2, dz/dt = 3");
-    class Test : System {
+    class Test : System!3 {
         override Vector!(double, 3) opCall(Vector!(double, 3) state) { return new Vector!(double, 3)([1, 2, 3]); }
     }
-    RK4!3 rk4 = new RK4(!3new Test);
+    RK4!3 rk4 = new RK4!3(new Test);
     writeln("Base (0, 0, 0) with dt = 1: " ~ rk4(new Vector!(double, 3)(0), 1).toString);
     writeln("Base (0, 0, 0) with dt = 0.5: " ~ rk4(new Vector!(double, 3)(0), 0.5).toString);
     writeln("Base (1, 2, 3) with dt = 1: " ~ rk4(new Vector!(double, 3)([1, 2, 3]), 1).toString);
-    writeln("Base Ensemble((3, 2, 1), (1, 2, 3)) with dt = 1: " ~ rk4(new Ensemble([new Vector!(double, 3)([1, 2, 3]), new Vector!(double, 3)([3, 2, 1])]), 1).toString);
+    writeln("Base Ensemble((3, 2, 1), (1, 2, 3)) with dt = 1: " ~ rk4(new Ensemble!3([new Vector!(double, 3)([1, 2, 3]), new Vector!(double, 3)([3, 2, 1])]), 1).toString);
 
 }

@@ -128,12 +128,11 @@ unittest {
     import std.stdio;
     import systems.System;
     import integrators.RK4;
-    import data.Vector;
 
     writeln("\nUNITTEST: Timeseries");
     Timeseries!(Vector!(double, 3)) timeseries= new Timeseries!(Vector!(double, 3))();
-    class Test : System {
-        override Vector opCall(Vector!(double, 3) state) { return new Vector!(double, 3)(1); }
+    class Test : System!3 {
+        override Vector!(double, 3) opCall(Vector!(double, 3) state) { return new Vector!(double, 3)(1); }
     }
     foreach(i; 0..10) {
         timeseries.add(i, new Vector!(double, 3)(i));
@@ -141,6 +140,6 @@ unittest {
     writeln("Times: ", timeseries.times);
     writeln("Time Series: ", timeseries.members);
     writeln("Time Series(2): ", timeseries.value(2));
-    writeln("Time Series(2.5): ", timeseries.value(2.5, new RK4(new Test())));
+    writeln("Time Series(2.5): ", timeseries.value(2.5, new RK4!3(new Test())));
 
 }

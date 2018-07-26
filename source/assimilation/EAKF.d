@@ -150,20 +150,20 @@ unittest {
     import std.stdio;
 
     writeln("\nUNITTEST: EAKF");
-    EAKF!3 eakf = new EAKF!3(new Likelihood(Vector!(double, 3)(0), Vector!(double, 3)(1)));
+    EAKF!3 eakf = new EAKF!3(new Likelihood!3(new Vector!(double, 3)(0), new Vector!(double, 3)(1)));
     //Standard deviation here should be zero, so ensemble should not change
-    Ensemble test1 = new Ensemble(
+    Ensemble!3 test1 = new Ensemble!3(
+        [[1, 1, 1, 1, 1, 1 ,1, 1], 
         [1, 1, 1, 1, 1, 1 ,1, 1], 
-        [1, 1, 1, 1, 1, 1 ,1, 1], 
-        [1, 1, 1, 1, 1, 1 ,1, 1]
+        [1, 1, 1, 1, 1, 1 ,1, 1]]
     );
-    Ensemble test2 = new Ensemble(
+    Ensemble!3 test2 = new Ensemble!3(
+        [[0, 0.1, 0.2, 0.3, 0.3, 0.4, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.6, 0.6, 0.6, 0.7, 0.7, 0.8, 0.9, 1],
         [0, 0.1, 0.2, 0.3, 0.3, 0.4, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.6, 0.6, 0.6, 0.7, 0.7, 0.8, 0.9, 1],
-        [0, 0.1, 0.2, 0.3, 0.3, 0.4, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.6, 0.6, 0.6, 0.7, 0.7, 0.8, 0.9, 1],
-        [0, 0.1, 0.2, 0.3, 0.3, 0.4, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.6, 0.6, 0.6, 0.7, 0.7, 0.8, 0.9, 1]
+        [0, 0.1, 0.2, 0.3, 0.3, 0.4, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.6, 0.6, 0.6, 0.7, 0.7, 0.8, 0.9, 1]]
     );
-    Ensemble result1 = eakf(test1);
-    Ensemble result2 = eakf(test2);
+    Ensemble!3 result1 = eakf(test1);
+    Ensemble!3 result2 = eakf(test2);
     //writeln(eakf.getPosterior(test1));
     //writeln(eakf.getPosterior(test2));
     writeln("Ensemble with mean ", test1.eMean, 

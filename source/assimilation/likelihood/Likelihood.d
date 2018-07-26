@@ -16,7 +16,7 @@ class Likelihood(uint dim) {
 
     Vector!(double, dim) gaussianMean; ///A vector containing the mean of a gaussian likelihood
     Vector!(double, dim) gaussianDeviation; ///A vector containing the standard deviation of a gaussian likelihood
-    double[dim][] likelihoods; ///A set of arrays corresponding to a dimension of the model (number of observed variables)
+    double[][dim] likelihoods; ///A set of arrays corresponding to a dimension of the model (number of observed variables)
 
     /** 
      * A constructor for a likelihood
@@ -31,7 +31,7 @@ class Likelihood(uint dim) {
      * A constructor for a likelihood
      * Used for non-Gaussian likelihoods with RHF
      */
-    this(double[dim][] likelihoods) {
+    this(double[][dim] likelihoods) {
         this.likelihoods = likelihoods;
     }
 

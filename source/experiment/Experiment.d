@@ -125,10 +125,10 @@ unittest {
     import mir.random;
 
     writeln("\nUNITTEST: Experiment");
-    class Test : System {
+    class Test : System!3 {
         override Vector!(double, 3) opCall(Vector!(double, 3) state) { return new Vector!(double, 3)(1); }
     }
-    RK4 rk4 = new RK4(new Test());
+    RK4!3 rk4 = new RK4!3(new Test());
     Experiment!3 process = new Experiment!3(rk4, new EAKF!3);
     process.getTruth(new Vector!(double, 3)(0), 0, 10, 1);
     writeln("Integrating <1, 1, 1> from 0 to 10 returns ", process.truth.members);
@@ -136,8 +136,8 @@ unittest {
     process.setError(new GaussianError!3(new Vector!(double, 3)(0.1), process.truth, rk4, &gen));
     process.getObservations(0, 10, 3);
     writeln("Observing every 3 seconds with std (0.1, 0.1, 0.1) returns ", process.observations.members);
-    process.setLikelihood(new LikelihoodGetter(process.observations, new Vector!(double, 3)(0.1)));
-    process.getEnsembleTimeseries!false(0, 10, 1, 4, 0, new Ensemble(new Vector!(double, 3)(0), 3, new Vector!(double, 3)(0.1), &gen));
+    process.setLikelihood(new LikelihoodGetter!3(process.observations, new Vector!(double, 3)(0.1)));
+    process.getEnsembleTimeseries!false(0, 10, 1, 4, 0, new Ensemble!3(new Vector!(double, 3)(0), 3, new Vector!(double, 3)(0.1), &gen));
     writeln("RMSE is ", RMSE(process.ensembleSeries, process.truth));
 
 }

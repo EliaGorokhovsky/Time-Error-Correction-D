@@ -171,7 +171,7 @@ void main() {
 	foreach(i; 0..15) {
 		timeErrors ~= i * 0.001;
 	}
-	double[] errors = [0.1];
+	double[] errors = [0.00001];
 	//This will set up a number of random seeds
 	//The first map statement will give different random seeds every program run
 	//The second map statement will ensure that all program runs are the same

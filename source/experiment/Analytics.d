@@ -39,7 +39,7 @@ unittest {
     Timeseries!(Ensemble!3) data = new Timeseries!(Ensemble!3)();
     Timeseries!(Vector!(double, 3)) truth = new Timeseries!(Vector!(double, 3))();
     foreach(i; 0..10) {
-        data.add(i, new Ensemble([new Vector!(double, 3)([3, 0, 0]), new Vector!(double, 3)(0), new Vector!(double, 3)(0)]));
+        data.add(i, new Ensemble!3([new Vector!(double, 3)([3, 0, 0]), new Vector!(double, 3)(0), new Vector!(double, 3)(0)]));
         truth.add(i, new Vector!(double, 3)(0));
     }
     writeln("Ensembles of ", data.members[0], " with Vector ", truth.members[0], " result in an RMSE of ", RMSE(data, truth));

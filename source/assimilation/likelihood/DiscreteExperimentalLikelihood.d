@@ -315,7 +315,7 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
         this.getTimeLikelihood(time, ensembles);
         //We define a discrete likelihood separately for the three variables 
         //in order to assimilate them separately
-        double[dim][] likelihoods;
+        double[][dim] likelihoods;
         //We give them each a miniscule value so that we don't end up with a uniformly zero likelihood
         //still, if this is happening, there is a problem...
         static foreach (i; 0..dim) {
@@ -354,7 +354,7 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
             }
         }
         //Normalize the likelihoods
-        double[] sums = likelihoods.map!(a => a.to!(double[]).sum).array;
+        double[] sums = likelihoods[].map!(a => a.to!(double[]).sum).array;
         assert(sums.to!(double[]).all!(a => a != 0), "Experimental likelihood sum is 0");
         foreach(index, ref component; timeLikelihood.parallel) {
             static foreach (i; 0..dim) {
@@ -398,7 +398,7 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
         Vector!(double, dim)[] observationTrajectory = this.getObservationTrajectory(time);
         assert(timeLikelihood.length == observationTrajectory.length, "timeLikelihood has " ~ timeLikelihood.length.to!string ~ " elements whereas observationTrajectory has " ~ observationTrajectory.length.to!string);
         //Apply likelihoods
-        double[dim][] likelihoods;
+        double[][dim] likelihoods;
         //We set them to a small value to ensure there will be no likelihood that is uniformly zero
         //Still, if this becomes necessary, we have a problem
         static foreach (i; 0..dim) {
@@ -413,7 +413,7 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
             }
         }
         //Normalize the likelihoods
-        double[] sums = likelihoods.map!(a => a.to!(double[]).sum).array;
+        double[] sums = likelihoods[].map!(a => a.to!(double[]).sum).array;
         assert(sums.all!(a => a != 0), "Experimental likelihood sum is 0");
         foreach(index, ref component; timeLikelihood.parallel) {
             static foreach (i; 0..dim) {

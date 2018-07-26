@@ -13,6 +13,7 @@ import std.algorithm; //Used for map statements
 import std.array; //Used to convert map statement outputs to arrays
 import std.conv; //Used for type conversion 
 import std.mathspecial; //Used for approximate equality between doubles and checking for NaN
+import std.parallelism; //Used to quickly iterate through the prior
 import std.range; //Used for iotas (ranges of numbers with steps)
 import std.typecons; //Used for tuples for sorting pairs of items
 import assimilation.Assimilator; //Parent class
@@ -31,7 +32,7 @@ import utility.Sort; //Used to sort associated pairs of items
  */
 class RHF(uint dim) : Assimilator!dim {
 
-    double[dim][] likelihoods; ///Probabilities associated with the values of the ensemble, dimensionally independent
+    double[][dim] likelihoods; ///Probabilities associated with the values of the ensemble, dimensionally independent
     bool rectangularQuadrature; ///Whether rectangular or trapezoidal quadrature will be used to calculate probabilities with likelihood
 
     /**
@@ -66,14 +67,16 @@ class RHF(uint dim) : Assimilator!dim {
      */
     override Ensemble!dim opCall(Ensemble!dim prior) {
         //Ensure none of the likelihoods have NaN (not a number) in them
-        assert(!this.likelihoods.any!checkNaN, "NaN in likelihood");
-        assert(!prior.valueLists.any!checkNaN, "NaN in prior");
+        assert(!this.likelihoods[].any!checkNaN, "NaN in likelihood");
+        assert(!prior.valueLists[].any!checkNaN, "NaN in prior");
         //Copy the ensemble so as to not change it while calculating
         Ensemble!dim output = prior.copy();
         //Regress the observation increments for each variable onto the other variables
+        double[dim] slopes;
+        double[] obsIncrements;
         static foreach (i; 0..dim) {
-            double[dim] slopes = iota(0, dim, 1).map!(a => regressionSlope(output.valueLists[i], output.valueLists[a]));
-            double[] obsIncrements = this.getObservationIncrements(output.valueLists[i], posteriorMean[i], posteriorSpread[i]);
+            slopes = iota(0, dim, 1).map!(a => regressionSlope(output.valueLists[i], output.valueLists[a])).array;
+            obsIncrements = this.getObservationIncrements(output.valueLists[i], this.likelihoods[i]);
             static foreach (j; 0..dim) {
                 foreach (index, increment; obsIncrements.parallel) {
                     output.members[index][j] = output.members[index][j] + slopes[j] * increment;
@@ -269,11 +272,11 @@ unittest {
 
     //Ensure results are similar to EAKF
     writeln("\nUNITTEST: RHF");
-    RHF!3 rhf1 = new RHF!3(new Likelihood([0, 0, 0.25, 0.5, 1, 0.5, 0.25, 0], [0, 0, 0.25, 0.5, 1, 0.5, 0.25, 0], [0, 0, 0.25, 0.5, 1, 0.5, 0.25, 0]), true);
+    RHF!3 rhf1 = new RHF!3(new Likelihood!3([[0, 0, 0.25, 0.5, 1, 0.5, 0.25, 0], [0, 0, 0.25, 0.5, 1, 0.5, 0.25, 0], [0, 0, 0.25, 0.5, 1, 0.5, 0.25, 0]]), true);
     Ensemble!3 test1 = new Ensemble!3(
+        [[1, 2, 3, 4, 5, 6 ,7, 8], 
         [1, 2, 3, 4, 5, 6 ,7, 8], 
-        [1, 2, 3, 4, 5, 6 ,7, 8], 
-        [1, 2, 3, 4, 5, 6 ,7, 8]
+        [1, 2, 3, 4, 5, 6 ,7, 8]]
     );
     /*RHF rhf2 = new RHF([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
