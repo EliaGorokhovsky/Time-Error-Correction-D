@@ -132,7 +132,7 @@ unittest {
     Experiment!3 process = new Experiment!3(rk4, new EAKF!3);
     process.getTruth(new Vector!(double, 3)(0), 0, 10, 1);
     writeln("Integrating <1, 1, 1> from 0 to 10 returns ", process.truth.members);
-    Random gen = Random(unpredictableSeed);
+    Random gen = Random(1);
     process.setError(new GaussianError!3(new Vector!(double, 3)(0.1), process.truth, rk4, &gen));
     process.getObservations(0, 10, 3);
     writeln("Observing every 3 seconds with std (0.1, 0.1, 0.1) returns ", process.observations.members);
