@@ -16,7 +16,7 @@ class Line(uint dim) : System!dim {
     }
 
     override Vector!(double, dim) opCall(Vector!(double, dim) state) {
-        return this.slope;
+        return new Vector!(double, dim)(this.slope);
     }
 
     override string toString() {
