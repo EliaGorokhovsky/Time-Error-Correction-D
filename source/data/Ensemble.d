@@ -143,7 +143,7 @@ class Ensemble(uint dim) {
      * Returns a copy of the ensemble
      */
     Ensemble!dim copy() {
-        return new Ensemble!dim(this.members.dup);
+        return new Ensemble!dim(this.members.map!(a => new Vector!(double, dim)(a)).array);
     }
 
 }
