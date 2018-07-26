@@ -166,8 +166,8 @@ class Ensemble {
      * Handles shifting the ensemble without creating a new one
      */
     void opOpAssign(string op)(Vector other) {
-        static if (op == "+=") this.members = this.members.map!(a => a + other).array;
-        else static if (op == "-=") this.members = this.members.map!(a => a - other).array;
+        static if (op == "+") this.members = this.members.map!(a => a + other).array;
+        else static if (op == "-") this.members = this.members.map!(a => a - other).array;
     }
 
     /**
@@ -175,8 +175,8 @@ class Ensemble {
      */
     void opOpAssign(string op)(double scalar) {
         Vector average = this.eMean;
-        static if (op == "*=") this.members = this.members.map!(a => average + (a - average) * scalar).array;
-        else static if (op == "/=") this.members = this.members.map!(a => average + (a - average) / scalar).array;
+        static if (op == "*") this.members = this.members.map!(a => average + (a - average) * scalar).array;
+        else static if (op == "/") this.members = this.members.map!(a => average + (a - average) / scalar).array;
     }
 
     /**
@@ -204,6 +204,7 @@ unittest {
     Random gen = Random(1);
     Ensemble ensemble = new Ensemble(base, 20, Vector(0.01, 0.01, 0.01), &gen);
     writeln("Ensemble with base (0, 0, 0) and error (0.01, 0.01, 0.01) has x values ", ensemble.xValues);
+    writeln("Ensemble size is ", ensemble.size);
     writeln("Ensemble mean in x is ", ensemble.eMean.x);
     writeln("Ensemble standard deviation in x is ", ensemble.eStandardDeviation.x);
     ensemble += Vector(2, 2, 2);
