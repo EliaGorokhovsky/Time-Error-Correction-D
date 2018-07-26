@@ -5,8 +5,8 @@ module experiment.Parameters;
 
 import std.conv; //Used to convert things to strings
 import assimilation.Assimilator; //Used to store the assimilation methods that will be used
-import data.Vector; //Used to store start and end states for the system
 import integrators.Integrator; //Used to store how the system will be advanced in time
+import math.Vector; //Used to store start states
 import systems.System; //Used to store the system that will be assimilated
 import app; //Used to know about run configurations
 
@@ -14,13 +14,13 @@ import app; //Used to know about run configurations
  * A class (basically a struct) storing experimental parameters that define how this experiment will run
  * Contains information pertinent to the entire experiment
  */
-struct Parameters {
+struct Parameters(uint dim) {
 
-    Vector startState; ///The initial point of the truth
+    Vector!(double, dim) startState; ///The initial point of the truth
     double startTime; ///The initial time with which to associate the initial point
 	double endTime; ///The time at which to stop the experiment
 	double dt; ///The length of each step of the integrator
-	Integrator integrator; ///The integrator used to return points from previous points
+	Integrator!dim integrator; ///The integrator used to return points from previous points
 	//Getting observations
 	double obsStartTime; ///When to start observing
 	double obsEndTime; ///When to stop observing
@@ -29,11 +29,11 @@ struct Parameters {
 	double ensembleEndTime; ///When to stop assimilating
 	double ensembledt; ///The step for ensemble integration
 	double spinup; ///The amount of time the ensemble is run before beginning to assimilate
-	Vector ensembleGenesis; ///The mean of the initial ensemble distribution
-	Vector ensembleDeviation; ///The standard deviation of the initial ensemble distribution
+	Vector!(double, dim) ensembleGenesis; ///The mean of the initial ensemble distribution
+	Vector!(double, dim) ensembleDeviation; ///The standard deviation of the initial ensemble distribution
 	uint ensembleSize; //The size of the ensemble
-	Assimilator controlAssimilator; ///The assimilation method for the control
-	Assimilator experimentalAssimilator; ///The assimilation method for the treatment 
+	Assimilator!dim controlAssimilator; ///The assimilation method for the control
+	Assimilator!dim experimentalAssimilator; ///The assimilation method for the treatment 
 	double minimumOffset; ///The first time that is a valid time for observation relative to reported time
 	double maximumOffset; ///The last time that is a valid time for observation relative to reported time
 	uint bins; ///The amount of different time intervals tested in experimental likelihood algorithm

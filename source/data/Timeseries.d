@@ -9,9 +9,10 @@ module data.Timeseries;
 
 import std.algorithm; //Used for sorting when finding dt
 import std.math; //Used for approximate equality among doubles
+import std.traits; //Used to check if the timeseries type is of a Vector or Ensemble template
 import data.Ensemble; //Used as an input type for an overload of value() that interpolates
-import data.Vector; //Used as an input type for an overload of value() that interpolates
 import integrators.Integrator; //Used to interpolate for getting value at undefined times
+import math.Vector; //Used to define possible data storage objects that can be interpolated
 
 /**
  * Essentially an array of something
@@ -56,10 +57,10 @@ class Timeseries(T) {
     /**
      * If the timeseries contains ensembles, returns a timeseries of their means
      */
-    static if(is(T == Ensemble)) {
-        @property Timeseries!Vector meanSeries() {
+    static if(__traits(isSame, TemplateOf!(T), Ensemble)) {
+        @property Timeseries!(Vector!(double, dim)) meanSeries(uint dim)() {
             assert(this.members.length == this.times.length);
-            Timeseries!Vector means = new Timeseries!Vector();
+            Timeseries!(Vector!(double, dim)) means = new Timeseries!(Vector!(double, dim))();
             //Fils the new timeseries
             foreach(i; 0..this.members.length) {
                 means.add(this.times[i], this.members[i].eMean);
@@ -96,8 +97,8 @@ class Timeseries(T) {
      * If there is no corresponding state in the timeseries, use an integrator
      * TODO: Interpolate instead
      */
-    static if (is(T == Vector) || is(T == Ensemble)) {
-        T value(double time, Integrator integrator = null) {
+    static if (__traits(isSame, TemplateOf!(T), Vector) || __traits(isSame, TemplateOf!(T), Ensemble)) {
+        T value(uint dim)(double time, Integrator!dim integrator = null) {
             //If the time is defined, no need to use the integrator
             if(this.times.any!(a => a.approxEqual(time, 1e-6, 1e-6))) { 
                 double newTime = this.times.find!(a => a.approxEqual(time, 1e-6, 1e-6))[0];
@@ -127,19 +128,18 @@ unittest {
     import std.stdio;
     import systems.System;
     import integrators.RK4;
-    import data.Vector;
 
     writeln("\nUNITTEST: Timeseries");
-    Timeseries!Vector timeseries= new Timeseries!Vector();
-    class Test : System {
-        override Vector opCall(Vector state) { return Vector(1, 1, 1); }
+    Timeseries!(Vector!(double, 3)) timeseries= new Timeseries!(Vector!(double, 3))();
+    class Test : System!3 {
+        override Vector!(double, 3) opCall(Vector!(double, 3) state) { return new Vector!(double, 3)(1); }
     }
     foreach(i; 0..10) {
-        timeseries.add(i, Vector(i, i, i));
+        timeseries.add(i, new Vector!(double, 3)(i));
     }
     writeln("Times: ", timeseries.times);
     writeln("Time Series: ", timeseries.members);
     writeln("Time Series(2): ", timeseries.value(2));
-    writeln("Time Series(2.5): ", timeseries.value(2.5, new RK4(new Test())));
+    writeln("Time Series(2.5): ", timeseries.value(2.5, new RK4!3(new Test())));
 
 }

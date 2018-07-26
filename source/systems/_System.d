@@ -1,14 +1,14 @@
 module systems.System;
 
 import data.Ensemble;
-import data.Vector;
+import math.Vector;
 
 /**
  * An overarching definition of what makes a dynamical system
  * Defines what systems need to implement
  */
-abstract class System {
+abstract class System(uint dim) {
 
-    Vector opCall(Vector state);     ///The system's defining equations; takes in a position vector and returns a velocity vector for use in an integrator
+    Vector!(double, dim) opCall(Vector!(double, dim) state);     ///The system's defining equations; takes in a position vector and returns a velocity vector for use in an integrator
 
 }

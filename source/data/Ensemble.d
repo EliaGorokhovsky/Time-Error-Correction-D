@@ -8,101 +8,53 @@ module data.Ensemble;
 import std.algorithm; //Used for map statements
 import std.array; //Used to convert map statement outputs to arrays
 import std.conv; //Used for casting to string
+import std.parallelism; //Used for modifying all members of the ensemble at once
+import std.range; //Used to generate stepped ranges of numbers
 import mir.random; //Used to generate a random ensemble from a start point 
 import mir.random.variable; //Used to generate a random ensemble from a start point
-import data.Vector; //Used to represent an ensemble member
 import utility.ArrayStats; //Used to find variance and standard deviation
+import math.Vector; //Used to store state
 
 /**
  * An ensemble of points (position vectors)
  * Functionally an array
  */
-class Ensemble {
+class Ensemble(uint dim) {
 
-    Vector[] members; ///The points of the ensemble
-
-    /**
-     * Gets an array of all of the x-values of the points the ensemble
-     */
-    @property double[] xValues() {
-        return members.map!(a => a.x).array;
-    }
+    Vector!(double, dim)[] members; ///The points of the ensemble
 
     /**
-     * Sets the x-values independently of the other variables
+     * Returns a 2d array representing the transpose of the ensemble - arrays of its members' dimensional values
      */
-    @property void xValues(double[] input) {
-        assert(input.length == this.members.length);
-        foreach(i; 0..input.length) {
-            this.members[i].x = input[i];
+    @property double[][dim] valueLists() {
+        double[][dim] lists;
+        foreach (component; this.members) {
+            static foreach (i; 0..dim) {
+                lists[i] ~= component[i];
+            }
         }
-    }
-
-    /**
-     * Gets an array of all of the y-values of the points of the ensemble
-     */
-    @property double[] yValues() {
-        return members.map!(a => a.y).array;
-    }
-
-    /**
-     * Sets the y-values independently of the other variables
-     */
-    @property void yValues(double[] input) {
-        assert(input.length == this.members.length);
-        foreach(i; 0..input.length) {
-            this.members[i].y = input[i];
-        }
-    }
-
-    /**
-     * Gets an array of all of the z-values of the points of the ensemble
-     */
-    @property double[] zValues() {
-        return members.map!(a => a.z).array;
-    }
-
-    /**
-     * Sets the z-values independently of the other variables
-     */
-    @property void zValues(double[] input) {
-        assert(input.length == this.members.length);
-        foreach(i; 0..input.length) {
-            this.members[i].z = input[i];
-        }
+        return lists;
     }
 
     /** 
      * Gets a Vector containing the mean values of the ensemble
      */
-    @property Vector eMean() {
-        return Vector(
-            mean(this.xValues), 
-            mean(this.yValues), 
-            mean(this.zValues)
-        );
+    @property Vector!(double, dim) eMean() {
+        return new Vector!(double, dim)(this.valueLists[].map!(a => a.mean).array);
     }
 
     /**
      * Gets a vector containing variance for the ensemble members in each variable
      */
-    @property Vector eVariance() {
-        return Vector(
-            variance!1(this.xValues),
-            variance!1(this.yValues),
-            variance!1(this.zValues)
-        );
+    @property Vector!(double, dim) eVariance() {
+        return new Vector!(double, dim)(this.valueLists[].map!(a => a.variance!1).array);
     }
 
     /**
      * Gets a vector containing standard deviation for the ensemble members in each variable
      */
-    @property Vector eStandardDeviation() {
-        return Vector(
-            standardDeviation!1(this.xValues),
-            standardDeviation!1(this.yValues),
-            standardDeviation!1(this.zValues)
-        );
+    @property Vector!(double, dim) eStandardDeviation() {
+        return new Vector!(double, dim)(this.valueLists[].map!(a => a.standardDeviation!1).array);
     }
 
     /** 
@@ -116,12 +68,17 @@ class Ensemble {
      * Initializer for an ensemble
      * Generates ensemble with independent Gaussian variation from a base point 
      */
-    this(Vector base, int size, Vector error, Random* gen) {
-        auto normalX = NormalVariable!double(base.x, error.x);
-        auto normalY = NormalVariable!double(base.y, error.y);
-        auto normalZ = NormalVariable!double(base.z, error.z);
+    this(Vector!(double, dim) base, int size, Vector!(double, dim) error, Random* gen) {
+        NormalVariable!double[dim] vars;
+        double[dim] point;
+        static foreach (i; 0..dim) {
+            vars[i] = NormalVariable!double(base[i], error[i]);
+        }
         foreach(i; 0..size) {
-            this.members ~= Vector(normalX(*gen), normalY(*gen), normalZ(*gen));
+            static foreach (j; 0..dim) {
+                point[j] = vars[j](*gen);
+            }
+            this.members ~= new Vector!(double, dim)(point);
         }
     }
 
@@ -129,7 +86,7 @@ class Ensemble {
      * Constructor for an ensemble
      * Constructs an ensemble using a set of members
      */
-    this(Vector[] points) {
+    this(Vector!(double, dim)[] points) {
         this.members = points;
     }
 
@@ -137,46 +94,52 @@ class Ensemble {
      * Constructor for an ensemble
      * Constructs an ensemble using three lists of values that become xValues, yValues, and zValues
      */
-    this(double[] xValues, double[] yValues, double[] zValues) {
-        assert(xValues.length == yValues.length && yValues.length == zValues.length);
-        foreach(i; 0..xValues.length) {
-            this.members ~= Vector(xValues[i], yValues[i], zValues[i]);
+    this(double[][dim] valueLists) {
+        assert(valueLists[].all!(a => a.length == valueLists[0].length));
+        double[dim] vectorComponents;
+        foreach(i; 0..valueLists[0].length) {
+            static foreach (j; 0..dim) {
+                vectorComponents[j] = valueLists[j][i];
+            }
+            this.members ~= new Vector!(double, dim)(vectorComponents);
         }
     }
 
     /**
      * Adding a vector to an ensemble returns a new ensemble linearly shifted by that vector
      */
-    Ensemble opBinary(string op)(Vector other) {
-        static if (op == "+") return new Ensemble(this.members.map!(a => a + other).array);
-        else static if (op == "-") return new Ensemble(this.members.map!(a => a - other).array);
+    Ensemble!dim opBinary(string op)(Vector!(double, dim) other) {
+        static if (op == "+") return new Ensemble!dim(this.members.map!(a => a + other).array);
+        else static if (op == "-") return new Ensemble!dim(this.members.map!(a => a - other).array);
         else return null;
     }
 
     /**
      * Scaling the ensemble should keep the mean the same but adjust the standard deviation
      */
-    Ensemble opBinary(string op)(double scalar) {
-        static if (op == "*") return new Ensemble(this.members.map!(a => this.eMean + (a - this.eMean) * scalar).array);
-        else static if (op == "/") return new Ensemble(this.members.map!(a => this.eMean + (a - this.eMean) / scalar).array);
+    Ensemble!dim opBinary(string op)(double scalar) {
+        static if (op == "*") return new Ensemble!dim(this.members.map!(a => this.eMean + (a - this.eMean) * scalar).array);
+        else static if (op == "/") return new Ensemble!dim(this.members.map!(a => this.eMean + (a - this.eMean) / scalar).array);
         else return null;
     }
-
+    
     /**
      * Handles shifting the ensemble without creating a new one
      */
-    void opOpAssign(string op)(Vector other) {
-        static if (op == "+=") this.members = this.members.map!(a => a + other).array;
-        else static if (op == "-=") this.members = this.members.map!(a => a - other).array;
+    void opOpAssign(string op)(Vector!(double, dim) other) {
+        foreach (ref member; this.members.parallel) {
+            mixin("member" ~ op ~ "= other;");
+        }
     }
 
     /**
      * Handles scaling the ensemble without creating a new one
      */
     void opOpAssign(string op)(double scalar) {
-        Vector average = this.eMean;
-        static if (op == "*=") this.members = this.members.map!(a => average + (a - average) * scalar).array;
-        else static if (op == "/=") this.members = this.members.map!(a => average + (a - average) / scalar).array;
+        Vector!(double, dim) average = new Vector!(double, dim)(this.eMean);
+        foreach (ref member; this.members.parallel) {
+            mixin("member = average + (member - average) " ~ op ~ " scalar;");
+        }
     }
 
     /**
@@ -189,8 +152,8 @@ class Ensemble {
     /**
      * Returns a copy of the ensemble
      */
-    Ensemble copy() {
-        return new Ensemble(this.members.dup);
+    Ensemble!dim copy() {
+        return new Ensemble!dim(this.members.map!(a => new Vector!(double, dim)(a)).array);
     }
 
 }
@@ -200,13 +163,13 @@ unittest {
     import std.stdio;
     
     writeln("\nUNITTEST: Ensemble");
-    Vector base = Vector(0, 0, 0);
+    Vector!(double, 3) base = new Vector!(double, 3)(0);
     Random gen = Random(1);
-    Ensemble ensemble = new Ensemble(base, 20, Vector(0.01, 0.01, 0.01), &gen);
-    writeln("Ensemble with base (0, 0, 0) and error (0.01, 0.01, 0.01) has x values ", ensemble.xValues);
+    Ensemble!3 ensemble = new Ensemble!3(base, 20, new Vector!(double, 3)(0.01), &gen);
+    writeln("Ensemble with base (0, 0, 0) and error (0.01, 0.01, 0.01) has x values ", ensemble.valueLists[0]);
     writeln("Ensemble mean in x is ", ensemble.eMean.x);
     writeln("Ensemble standard deviation in x is ", ensemble.eStandardDeviation.x);
-    ensemble += Vector(2, 2, 2);
+    ensemble += new Vector!(double, 3)(2);
     writeln("Shifting the ensemble by 2 results in mean ", ensemble.eMean);
     ensemble *= 2;
     writeln("Scaling the ensemble by 2 results in standard deviation, ", ensemble.eStandardDeviation);

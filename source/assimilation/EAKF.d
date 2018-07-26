@@ -11,11 +11,13 @@ module assimilation.EAKF;
 import std.algorithm; //Used for map functions
 import std.array; //Used to convert map function outputs to arrays
 import std.math; //Used to check approximate equality for doubles
+import std.parallelism; //Used to quickly apply increments to ensemble members
+import std.range; //Used to creat stepped forward ranges with iota
 import std.typecons; //Used to handle tuples for posterior information outputs
 import assimilation.Assimilator; //The parent class
 import assimilation.likelihood.Likelihood; //Used for likelihood inputs
-import data.Ensemble; //Used for the ensemble as inputs and outputs 
-import data.Vector; //Used for calculations in 3d
+import data.Ensemble; //Used for the ensemble as inputs and outputs
+import math.Vector; //Used for data storage 
 import utility.ArrayStats; //Used for mean and standard deviation
 import utility.Regression; //Used for regressing increments onto state variables
 
@@ -24,16 +26,16 @@ import utility.Regression; //Used for regressing increments onto state variables
  * Assimilates given Gaussian likelihood and assumed Gaussianity of prior
  * Adjusts prior ensemble with defined increments, rather than randomly like the Ensemble Kalman Filter (EnKF)
  */
-class EAKF : Assimilator {
+class EAKF(uint dim) : Assimilator!dim {
 
-    Vector observation; ///The observation to assimilate
-    Vector likelihood; ///The standard deviation of a Gaussian likelihood with 0 covariance around the observation
+    Vector!(double, dim) observation; ///The observation to assimilate
+    Vector!(double, dim) likelihood; ///The standard deviation of a Gaussian likelihood with 0 covariance around the observation
 
     /**
      * The constructor for an assimilator
      * Observation and likelihood are passed before assimilation
      */
-    this(Likelihood likelihoodVars) {
+    this(Likelihood!dim likelihoodVars) {
         this.observation = likelihoodVars.gaussianMean;
         this.likelihood = likelihoodVars.gaussianDeviation;
     }
@@ -51,7 +53,7 @@ class EAKF : Assimilator {
      * Sets the likelihood for the assimilator without creating a new one
      * Takes output of a LikelihoodGetter
      */
-    override void setLikelihood(Likelihood likelihoodVars) {
+    override void setLikelihood(Likelihood!dim likelihoodVars) {
         this.observation = likelihoodVars.gaussianMean;
         this.likelihood = likelihoodVars.gaussianDeviation;
     }
@@ -60,69 +62,56 @@ class EAKF : Assimilator {
      * Overloading to allow for calling the assimilator as a function
      * EAKF gets observation increments for a variable, regresses it onto all three variables, then repeats for the other variables
      */
-    override Ensemble opCall(Ensemble prior) {
+    override Ensemble!dim opCall(Ensemble!dim prior) {
         //Gets the posterior in the form of a mean and standard deviation in 3d
-        Tuple!(Vector, Vector) posteriorMetrics = this.getPosterior(prior);
-        Vector posteriorMean = posteriorMetrics[0];
-        Vector posteriorSpread = posteriorMetrics[1];
+        Tuple!(Vector!(double, dim), Vector!(double, dim)) posteriorMetrics = this.getPosterior(prior);
+        Vector!(double, dim) posteriorMean = posteriorMetrics[0];
+        Vector!(double, dim) posteriorSpread = posteriorMetrics[1];
         //Copies the prior ensemble to avoid changing it before doing calculations
-        Ensemble output = prior.copy();
-        //Regress observation increments in x onto y and z
-        double ySlope = regressionSlope(output.xValues, output.yValues);
-        double zSlope = regressionSlope(output.xValues, output.zValues);
-        double[] obsIncrements = this.getObservationIncrements(output.xValues, posteriorMean.x, posteriorSpread.x);
-        foreach(i; 0..obsIncrements.length) { output.members[i].x = output.members[i].x + obsIncrements[i]; } //Regression of a variable onto itself returns 1
-        foreach(i; 0..obsIncrements.length) { output.members[i].y = output.members[i].y + ySlope * obsIncrements[i]; }
-        foreach(i; 0..obsIncrements.length) { output.members[i].z = output.members[i].z + zSlope * obsIncrements[i]; }
-        //Regress observation increments in y onto x and z
-        double xSlope = regressionSlope(output.yValues, output.xValues);
-        zSlope = regressionSlope(output.yValues, output.zValues);
-        obsIncrements = this.getObservationIncrements(output.yValues, posteriorMean.y, posteriorSpread.y);
-        foreach(i; 0..obsIncrements.length) { output.members[i].x = output.members[i].x + xSlope * obsIncrements[i]; }
-        foreach(i; 0..obsIncrements.length) { output.members[i].y = output.members[i].y + obsIncrements[i]; } //Regression of a variable onto itself returns 1
-        foreach(i; 0..obsIncrements.length) { output.members[i].z = output.members[i].z + zSlope * obsIncrements[i]; }
-        //Regress observation increments in z onto x and y
-        xSlope = regressionSlope(output.zValues, output.xValues);
-        ySlope = regressionSlope(output.zValues, output.yValues);
-        obsIncrements = this.getObservationIncrements(output.zValues, posteriorMean.z, posteriorSpread.z);
-        foreach(i; 0..obsIncrements.length) { output.members[i].x = output.members[i].x + xSlope * obsIncrements[i]; }
-        foreach(i; 0..obsIncrements.length) { output.members[i].y = output.members[i].y + ySlope * obsIncrements[i]; }
-        foreach(i; 0..obsIncrements.length) { output.members[i].z = output.members[i].z + obsIncrements[i]; } //Regression of a variable onto itself returns 1
+        Ensemble!dim output = prior.copy();
+        //Regress the observation increments for each variable onto the other variables
+        double[dim] slopes;
+        double[] obsIncrements;
+        static foreach (i; 0..dim) {
+            slopes = iota(0, dim, 1).map!(a => regressionSlope(output.valueLists[i], output.valueLists[a])).array;
+            obsIncrements = this.getObservationIncrements(output.valueLists[i], posteriorMean[i], posteriorSpread[i]);
+            static foreach (j; 0..dim) {
+                foreach (index, increment; obsIncrements.parallel) {
+                    output.members[index][j] = output.members[index][j] + slopes[j] * increment;
+                }
+            }
+        }
         return output;
     }
 
     /**
      * Assuming normality, uses Bayes' Rule to find a posterior distribution given the instance's observation data.
      */
-    Tuple!(Vector, Vector) getPosterior(Ensemble prior) {
+    Tuple!(Vector!(double, dim), Vector!(double, dim)) getPosterior(Ensemble!dim prior) {
         //Posterior standard deviation is the square root of the inverse of the sum of the inverse squares of the prior and likelihood
         //i.e. post = 1 / √((1/(prior^2)) + (1/(lik^2)))
         //in other words, the variance of the posterior is half the harmonic mean of the prior and likelihood variances
         //If either the likelihood or the prior standard deviation is zero then
         //the ensemble or the observation is 100% sure and then
         //the posterior should also have 0 variance
-        Vector standardDeviation = Vector(       
-            prior.eStandardDeviation.x == 0 || this.likelihood.x == 0 ? 
-                0 : sqrt(1 / (pow(prior.eStandardDeviation.x, -2) + pow(this.likelihood.x, -2))),
-            prior.eStandardDeviation.y == 0 || this.likelihood.y == 0 ? 
-                0 : sqrt(1 / (pow(prior.eStandardDeviation.y, -2) + pow(this.likelihood.y, -2))),
-            prior.eStandardDeviation.z == 0 || this.likelihood.z == 0 ? 
-                0 : sqrt(1 / (pow(prior.eStandardDeviation.z, -2) + pow(this.likelihood.z, -2)))
-        );
+        double[dim] standardDeviations;
+        static foreach (i; 0..dim) {
+            standardDeviations[i] = prior.eStandardDeviation[i] == 0 || this.likelihood[i] == 0 ? 
+                0 : sqrt(1 / (pow(prior.eStandardDeviation[i], -2) + pow(this.likelihood[i], -2)));
+        }
+        Vector!(double, dim) standardDeviation = new Vector!(double, dim)(standardDeviations);
         //The mean is the posterior variance times 
         //priorMean / priorStd^2 + obs / lik^2
         //There are several ugly ternary operators here:
         //If the prior standard deviation is zero then don't change it
         //If the likelihood standard deviation is zero just set the prior to it
         //If both are zero there's something wrong, so I don't change the ensemble
-        Vector mean = Vector(
-            prior.eStandardDeviation.x == 0 ? prior.eMean.x : this.likelihood.x == 0 ? this.observation.x :
-                pow(standardDeviation.x, 2) * ((prior.eMean.x * pow(prior.eStandardDeviation.x, -2)) + (this.observation.x * pow(this.likelihood.x, -2))),
-            prior.eStandardDeviation.y == 0 ? prior.eMean.y : this.likelihood.y == 0 ? this.observation.y :
-                pow(standardDeviation.y, 2) * ((prior.eMean.y * pow(prior.eStandardDeviation.y, -2)) + (this.observation.y * pow(this.likelihood.y, -2))),
-            prior.eStandardDeviation.z == 0 ? prior.eMean.z : this.likelihood.z == 0 ? this.observation.z :
-                pow(standardDeviation.z, 2) * ((prior.eMean.z * pow(prior.eStandardDeviation.z, -2)) + (this.observation.z * pow(this.likelihood.z, -2)))
-        );
+        double[dim] means;
+        static foreach (i; 0..dim) {
+            means[i] = prior.eStandardDeviation[i] == 0 ? prior.eMean[i] : this.likelihood[i] == 0 ? this.observation[i] :
+                pow(standardDeviation[i], 2) * ((prior.eMean[i] * pow(prior.eStandardDeviation[i], -2)) + (this.observation[i] * pow(this.likelihood[i], -2)));
+        }
+        Vector!(double, dim) mean = new Vector!(double, dim)(means);
         return tuple(mean, standardDeviation);
     }
 
@@ -161,20 +150,20 @@ unittest {
     import std.stdio;
 
     writeln("\nUNITTEST: EAKF");
-    EAKF eakf = new EAKF(new Likelihood(Vector(0, 0, 0), Vector(1, 1, 1)));
+    EAKF!3 eakf = new EAKF!3(new Likelihood!3(new Vector!(double, 3)(0), new Vector!(double, 3)(1)));
     //Standard deviation here should be zero, so ensemble should not change
-    Ensemble test1 = new Ensemble(
+    Ensemble!3 test1 = new Ensemble!3(
+        [[1, 1, 1, 1, 1, 1 ,1, 1], 
         [1, 1, 1, 1, 1, 1 ,1, 1], 
-        [1, 1, 1, 1, 1, 1 ,1, 1], 
-        [1, 1, 1, 1, 1, 1 ,1, 1]
+        [1, 1, 1, 1, 1, 1 ,1, 1]]
     );
-    Ensemble test2 = new Ensemble(
+    Ensemble!3 test2 = new Ensemble!3(
+        [[0, 0.1, 0.2, 0.3, 0.3, 0.4, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.6, 0.6, 0.6, 0.7, 0.7, 0.8, 0.9, 1],
         [0, 0.1, 0.2, 0.3, 0.3, 0.4, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.6, 0.6, 0.6, 0.7, 0.7, 0.8, 0.9, 1],
-        [0, 0.1, 0.2, 0.3, 0.3, 0.4, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.6, 0.6, 0.6, 0.7, 0.7, 0.8, 0.9, 1],
-        [0, 0.1, 0.2, 0.3, 0.3, 0.4, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.6, 0.6, 0.6, 0.7, 0.7, 0.8, 0.9, 1]
+        [0, 0.1, 0.2, 0.3, 0.3, 0.4, 0.4, 0.4, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.6, 0.6, 0.6, 0.7, 0.7, 0.8, 0.9, 1]]
     );
-    Ensemble result1 = eakf(test1);
-    Ensemble result2 = eakf(test2);
+    Ensemble!3 result1 = eakf(test1);
+    Ensemble!3 result2 = eakf(test2);
     //writeln(eakf.getPosterior(test1));
     //writeln(eakf.getPosterior(test2));
     writeln("Ensemble with mean ", test1.eMean, 

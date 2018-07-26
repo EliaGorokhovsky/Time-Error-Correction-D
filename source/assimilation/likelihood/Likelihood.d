@@ -7,24 +7,22 @@
  */
 module assimilation.likelihood.Likelihood;
 
-import data.Vector; //Used for multivariate Gaussians
+import math.Vector; //Used for data storage
 
 /**
  * A nullable data-storage class containing various ways to store a likelihood
  */ 
-class Likelihood {
+class Likelihood(uint dim) {
 
-    Vector gaussianMean; ///A vector containing the mean of a gaussian likelihood
-    Vector gaussianDeviation; ///A vector containing the standard deviation of a gaussian likelihood
-    double[] xLikelihood; ///A list of probabilities in x dependent on the ensemble passed into a LikelihoodGetter
-    double[] yLikelihood; ///A list of probabilities in y dependent on the ensemble passed into a LikelihoodGetter
-    double[] zLikelihood; ///A list of probabilities in z dependent on the ensemble passed into a LikelihoodGetter
+    Vector!(double, dim) gaussianMean; ///A vector containing the mean of a gaussian likelihood
+    Vector!(double, dim) gaussianDeviation; ///A vector containing the standard deviation of a gaussian likelihood
+    double[][dim] likelihoods; ///A set of arrays corresponding to a dimension of the model (number of observed variables)
 
     /** 
      * A constructor for a likelihood
      * Used for Gaussian likelihoods with EAKF or similar
      */
-    this(Vector gaussianMean, Vector gaussianDeviation) {
+    this(Vector!(double, dim) gaussianMean, Vector!(double, dim) gaussianDeviation) {
         this.gaussianMean = gaussianMean;
         this.gaussianDeviation = gaussianDeviation;
     }
@@ -33,10 +31,8 @@ class Likelihood {
      * A constructor for a likelihood
      * Used for non-Gaussian likelihoods with RHF
      */
-    this(double[] xLikelihood, double[] yLikelihood, double[] zLikelihood) {
-        this.xLikelihood = xLikelihood;
-        this.yLikelihood = yLikelihood;
-        this.zLikelihood = zLikelihood;
+    this(double[][dim] likelihoods) {
+        this.likelihoods = likelihoods;
     }
 
 

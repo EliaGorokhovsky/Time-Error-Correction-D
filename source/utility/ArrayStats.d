@@ -83,6 +83,7 @@ double PDFVariance(double[] support, double[] probabilities) {
 
 
 unittest {
+    
     import std.stdio;
 
     writeln("\nUNITTEST: ArrayStats");
