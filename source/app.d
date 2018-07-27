@@ -1,6 +1,7 @@
 import std.algorithm;
 import std.array;
 import std.conv;
+import std.datetime.stopwatch;
 import std.file;
 import std.math;
 import std.range;
@@ -165,6 +166,7 @@ void main() {
 	string filename = "data/dataCollection/InferredTimeError12.csv";
 	string logfile = "data/ExperimentLog.txt";
 	string tag = "Inference-Spinup=2, Test-System, Addition";
+	StopWatch stopwatch = StopWatch(AutoStart.no);
 	bool logThisExperiment = true; //Set this to false if you don't want to write the experiment to the file
 	double[] observationIntervals = [1];
 	double[] timeErrors = [];
@@ -211,6 +213,7 @@ void main() {
 	);
 	writeln(params);
 	if(logThisExperiment) File(logfile, "a").writeln(params);
+	stopwatch.start();
 	if(config == RunConfigurations.COMPARE_RMSE) {
 		File(filename, "a").writeln("Seed, Observation Interval, Time Error, Control RMSE, Treatment RMSE");
 	} else if(config == RunConfigurations.CONTROL_RMSE) {
@@ -230,5 +233,9 @@ void main() {
 			}
 		}
 	}
-	if(logThisExperiment) File(logfile, "a").writeln("Complete!\n");
+	stopwatch.stop();
+	writeln("Finished ", 
+			observationIntervals.length * timeErrors.length * errors.length * seeds.length, 
+			" trials in ", stopwatch.peek.total!"msecs", " ms.");
+	if(logThisExperiment) File(logfile, "a").writeln("Complete in " ~ stopwatch.peek.total!"msecs".to!string ~ " ms!\n");
 }
