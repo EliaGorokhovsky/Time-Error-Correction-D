@@ -1,6 +1,3 @@
 # Time-Error-Correction-D
-A project to correct misreported observation times in data assimilation
-This is the DEPRECATED branch!
-It uses Vectors that are hardcoded to have 3 dimensions, and conflict with d2d-style vectors.
-The master branch has already been updated to have variable dimensionality (see dimensionality branch). When three dimensions are used in master, the results are exactly the same as a standard model run on this branch, so this code is obsolete. 
-I am keeping it here for posteriority and to have backup code.
+This code is for a project to correct misreported observation times in data assimilation. 
+I am considering the possibility that, when making measurements of a dynamical system (such as radiosonde measurements), the measurement time may be reported with some error. In most cases, when measuring something, there is a window in which the measurements can be taken and still be reported as a certain time. For instance, when taking sonde measurements according to the guidelines in the National Weather Service's 2010 rawinsonde operations manual, the measurements should be taken at time 1200 and 2400 every day (Every 12 hours) and windows for an observation taken at time H are either from H-60 to H+30 or from H-60 to H+60. Given a measurement window and a priori knowledge of a measuring instrument's observation error variance (the variance of an assumed Gaussian distribution centered at the truth from which observations are chosen), the goal of this project is to infer the magnitude of time error and apply it during assimilation in order to improve forecasts.
