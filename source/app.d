@@ -27,8 +27,8 @@ import systems.Line;
 import systems.System;
 import systems.Lorenz63;
 
-enum dimensions = 3; ///How many dimensions the experiment is being run in
-enum verboseRun = true; ///Whether to mention in detail what's going on in the program run
+enum dimensions = 1; ///How many dimensions the experiment is being run in
+enum verboseRun = false; ///Whether to mention in detail what's going on in the program run
 
 void run(Parameters!dimensions params, double observationInterval, double timeError, Vector!(double, dimensions) error, Random gen, ulong seed) {
 	
@@ -161,24 +161,24 @@ enum RunConfigurations: string {
 }
 
 void main() {
-	RunConfigurations config = RunConfigurations.COMPARE_RMSE;
-	string filename = "data/dataCollection/InferredTimeError5.csv";
+	RunConfigurations config = RunConfigurations.INFERRED_TIME_ERROR;
+	string filename = "data/dataCollection/InferredTimeError12.csv";
 	string logfile = "data/ExperimentLog.txt";
 	string tag = "Inference-Spinup=2, Test-System, Addition";
 	bool logThisExperiment = true; //Set this to false if you don't want to write the experiment to the file
-	double[] observationIntervals = [0.1];
+	double[] observationIntervals = [1];
 	double[] timeErrors = [];
 	foreach(i; 0..15) {
 		timeErrors ~= i * 0.001;
 	}
-	double[] errors = [0.00001];
+	double[] errors = [0.05];
 	//This will set up a number of random seeds
 	//The first map statement will give different random seeds every program run
 	//The second map statement will ensure that all program runs are the same
 	//You can also set random seeds to those outputted by the program to replicate its results
 	ulong[] seeds = iota(0, 1, 1)
-					.map!(a => unpredictableSeed)
-					/*.map!(a => cast(ulong)a)*/
+					/*.map!(a => unpredictableSeed)*/
+					.map!(a => cast(ulong)a)
 					.array;
 	//Package the parameters into one object
 	Parameters!dimensions params = Parameters!dimensions(
@@ -186,7 +186,7 @@ void main() {
 		0, //The initial time with which to associate the initial point
 		40, //The time at which to stop the experiment
 		0.01, //The length of each step of the integrator
-		new RK4!dimensions(new Line!dimensions), //The integrator used to return points from previous points, and its system
+		new RK4!dimensions(new Line!dimensions(new Vector!(double, 1)(25))), //The integrator used to return points from previous points, and its system
 		0, //When to start observing
 		40, //When to stop observing
 		0, //When to create the ensemble
@@ -200,7 +200,7 @@ void main() {
 		new EAKF!dimensions(), //The assimilation method for the treatment 
 		-0.06, //The first time that is a valid time for observation relative to reported time
 		0.06, //The last time that is a valid time for observation relative to reported time
-		21, //The amount of different time intervals tested in experimental likelihood algorithm
+		41, //The amount of different time intervals tested in experimental likelihood algorithm
 		observationIntervals, //The intervals between observations that will be tested
 		timeErrors, //The time error standard deviations that will be tested
 		errors, //The observation error standard deviations that will be tested

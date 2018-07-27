@@ -20,7 +20,7 @@ class Line(uint dim) : System!dim {
     }
 
     override string toString() {
-        return "Test System (slope = " ~ this.slope.toString ~ ")";
+        return "Linear System (slope = " ~ this.slope.toString ~ ")";
     }
 
 }
