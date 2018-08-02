@@ -78,7 +78,7 @@ void run(Parameters!dimensions params, double observationInterval, double timeEr
 		);
 		static if (verboseRun) writeln("Successfully ran ensemble.");
 		immutable double treatmentRMSE = RMSE!dimensions(treatment.ensembleSeries, treatment.truth);
-		File(params.datafile, "a").writeln(seed, ", ", observationInterval, ", ", timeError, ", ", controlRMSE, ", ", treatmentRMSE);
+		File(params.datafile, "a").writeln(seed, ", ", observationInterval, ",", error[0], ", ", timeError, ", ", controlRMSE, ", ", treatmentRMSE);
 		writeln("Treatment RMSE for time error ", timeError, " is ", treatmentRMSE);
 	} else if(params.config == RunConfigurations.CONTROL_RMSE) {
 		writeln("Control:");
@@ -101,7 +101,7 @@ void run(Parameters!dimensions params, double observationInterval, double timeEr
 		static if (verboseRun) writeln("Successfully ran ensemble.");
 		immutable double controlRMSE = RMSE!dimensions(control.ensembleSeries, control.truth);
 		writeln("Control RMSE for time error ", timeError, " is ", controlRMSE);
-		File(params.datafile, "a").writeln(seed, ", ", observationInterval, ", ", timeError, ", ", controlRMSE);
+		File(params.datafile, "a").writeln(seed, ", ", observationInterval, ",", error[0],  ", ", timeError, ", ", controlRMSE);
 	} else if(params.config == RunConfigurations.TREATMENT_RMSE) {
 		writeln("Experiment:");
 		Experiment!dimensions treatment = new Experiment!dimensions(params.integrator, params.experimentalAssimilator);
@@ -124,7 +124,7 @@ void run(Parameters!dimensions params, double observationInterval, double timeEr
 		);
 		static if (verboseRun) writeln("Successfully ran ensemble.");
 		immutable double treatmentRMSE = RMSE!dimensions(treatment.ensembleSeries, treatment.truth);
-		File(params.datafile, "a").writeln(seed, ", ", observationInterval, ", ", timeError, ", " , treatmentRMSE);
+		File(params.datafile, "a").writeln(seed, ", ", observationInterval, ",", error[0], ", ", timeError, ", " , treatmentRMSE);
 		writeln("Treatment RMSE for time error ", timeError, " is ", treatmentRMSE);
 	} else if(params.config == RunConfigurations.INFERRED_TIME_ERROR) {
 		writeln("Experiment:");
@@ -148,7 +148,7 @@ void run(Parameters!dimensions params, double observationInterval, double timeEr
 		);
 		static if (verboseRun) writeln("Successfully ran ensemble.");
 		DiscreteExperimentalLikelihood!dimensions treatmentLikelihood = cast(DiscreteExperimentalLikelihood!dimensions) treatment.likelihoodGetter;
-		File(params.datafile, "a").writeln(seed, ", ", observationInterval, ", ", timeError, ", ", treatmentLikelihood.expectedTime, ",", treatmentLikelihood.timeDeviation, ",,", treatmentLikelihood.timeLikelihood.to!string[1 .. $ - 1]);
+		File(params.datafile, "a").writeln(seed, ", ", observationInterval, ",", error[0], ", ", timeError, ", ", treatmentLikelihood.expectedTime, ",", treatmentLikelihood.timeDeviation, ",,", treatmentLikelihood.timeLikelihood.to!string[1 .. $ - 1]);
 		writeln("Inferred time error for time error ", timeError, " is ", treatmentLikelihood.timeDeviation);
 	}
 
@@ -163,17 +163,17 @@ enum RunConfigurations: string {
 
 void main() {
 	RunConfigurations config = RunConfigurations.INFERRED_TIME_ERROR;
-	string filename = "data/dataCollection/InferredTimeError12.csv";
+	string filename = "data/dataCollection/InferredTimeError29.csv";
 	string logfile = "data/ExperimentLog.txt";
-	string tag = "Inference-Spinup=2, Test-System, Addition";
+	string tag = "Inference-Spinup=2, Test-System, Multiplication";
 	StopWatch stopwatch = StopWatch(AutoStart.no);
-	bool logThisExperiment = true; //Set this to false if you don't want to write the experiment to the file
-	double[] observationIntervals = [1];
-	double[] timeErrors = [];
-	foreach(i; 0..15) {
+	bool logThisExperiment = true; //Set this to false if you don't want to write the experiment to the logfile
+	double[] observationIntervals = [0.1];
+	double[] timeErrors = [0.007];
+	/*foreach(i; 0..15) {
 		timeErrors ~= i * 0.001;
-	}
-	double[] errors = [0.05];
+	}*/
+	double[] errors = [0.000001, 0.01, 0.03, 0.05, 0.07, 0.09, 0.11, 0.13, 0.15, 0.17, 0.19];
 	//This will set up a number of random seeds
 	//The first map statement will give different random seeds every program run
 	//The second map statement will ensure that all program runs are the same
@@ -188,7 +188,7 @@ void main() {
 		0, //The initial time with which to associate the initial point
 		40, //The time at which to stop the experiment
 		0.01, //The length of each step of the integrator
-		new RK4!dimensions(new Line!dimensions(new Vector!(double, 1)(25))), //The integrator used to return points from previous points, and its system
+		new RK4!dimensions(new Line!dimensions(new Vector!(double, 1)(10))), //The integrator used to return points from previous points, and its system
 		0, //When to start observing
 		40, //When to stop observing
 		0, //When to create the ensemble
@@ -202,7 +202,7 @@ void main() {
 		new EAKF!dimensions(), //The assimilation method for the treatment 
 		-0.06, //The first time that is a valid time for observation relative to reported time
 		0.06, //The last time that is a valid time for observation relative to reported time
-		41, //The amount of different time intervals tested in experimental likelihood algorithm
+		11, //The amount of different time intervals tested in experimental likelihood algorithm
 		observationIntervals, //The intervals between observations that will be tested
 		timeErrors, //The time error standard deviations that will be tested
 		errors, //The observation error standard deviations that will be tested
@@ -215,14 +215,14 @@ void main() {
 	if(logThisExperiment) File(logfile, "a").writeln(params);
 	stopwatch.start();
 	if(config == RunConfigurations.COMPARE_RMSE) {
-		File(filename, "a").writeln("Seed, Observation Interval, Time Error, Control RMSE, Treatment RMSE");
+		File(filename, "a").writeln("Seed, Observation Interval, Observation Error, Time Error, Control RMSE, Treatment RMSE");
 	} else if(config == RunConfigurations.CONTROL_RMSE) {
-		File(filename, "a").writeln("Seed, Observation Interval, Time Error, Control RMSE");
+		File(filename, "a").writeln("Seed, Observation Interval, Observation Error, Time Error, Control RMSE");
 	} else if(config == RunConfigurations.TREATMENT_RMSE) {
-		File(filename, "a").writeln("Seed, Observation Interval, Time Error, Treatment RMSE");
+		File(filename, "a").writeln("Seed, Observation Interval, Observation Error, Time Error, Treatment RMSE");
 	} else if(config == RunConfigurations.INFERRED_TIME_ERROR) {
 		string binMiddles = iota(0, params.bins, 1).map!(a => params.minimumOffset + (params.maximumOffset - params.minimumOffset) / (params.bins * 2) + a * (params.maximumOffset - params.minimumOffset) / (params.bins)).array.to!string[1 .. $ - 1];
-		File(filename, "a").writeln("Seed, Observation Interval, Time Error, Inferred Time Offset, Inferred Time Error, Inferred Time Offset Distribution: , ", binMiddles);
+		File(filename, "a").writeln("Seed, Observation Interval, Observation Error, Time Error, Inferred Time Offset, Inferred Time Error, Inferred Time Offset Distribution: , ", binMiddles);
 	}
 	foreach(observationInterval; observationIntervals) {
 		foreach(timeError; timeErrors) {
