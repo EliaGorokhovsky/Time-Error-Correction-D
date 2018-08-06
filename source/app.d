@@ -28,7 +28,7 @@ import systems.Line;
 import systems.System;
 import systems.Lorenz63;
 
-enum dimensions = 1; ///How many dimensions the experiment is being run in
+enum dimensions = 3; ///How many dimensions the experiment is being run in
 enum verboseRun = false; ///Whether to mention in detail what's going on in the program run
 
 void run(Parameters!dimensions params, double observationInterval, double timeError, Vector!(double, dimensions) error, Random gen, ulong seed) {
@@ -163,17 +163,17 @@ enum RunConfigurations: string {
 
 void main() {
 	RunConfigurations config = RunConfigurations.INFERRED_TIME_ERROR;
-	string filename = "data/dataCollection/InferredTimeError29.csv";
+	string filename = "data/dataCollection/InferredTimeError41.csv";
 	string logfile = "data/ExperimentLog.txt";
-	string tag = "Inference-Spinup=2, Test-System, Multiplication";
+	string tag = "Inference-Spinup=2, Addition";
 	StopWatch stopwatch = StopWatch(AutoStart.no);
-	bool logThisExperiment = true; //Set this to false if you don't want to write the experiment to the logfile
+	bool logThisExperiment = false; //Set this to false if you don't want to write the experiment to the logfile
 	double[] observationIntervals = [0.1];
-	double[] timeErrors = [0.007];
-	/*foreach(i; 0..15) {
+	double[] timeErrors = [];
+	foreach(i; 0..15) {
 		timeErrors ~= i * 0.001;
-	}*/
-	double[] errors = [0.000001, 0.01, 0.03, 0.05, 0.07, 0.09, 0.11, 0.13, 0.15, 0.17, 0.19];
+	}
+	double[] errors = [0.1];
 	//This will set up a number of random seeds
 	//The first map statement will give different random seeds every program run
 	//The second map statement will ensure that all program runs are the same
@@ -186,15 +186,15 @@ void main() {
 	Parameters!dimensions params = Parameters!dimensions(
 		new Vector!(double, dimensions)(1), //The initial point of the truth
 		0, //The initial time with which to associate the initial point
-		40, //The time at which to stop the experiment
+		200, //The time at which to stop the experiment
 		0.01, //The length of each step of the integrator
-		new RK4!dimensions(new Line!dimensions(new Vector!(double, 1)(10))), //The integrator used to return points from previous points, and its system
+		new RK4!dimensions(new Lorenz63()), //The integrator used to return points from previous points, and its system
 		0, //When to start observing
-		40, //When to stop observing
+		200, //When to stop observing
 		0, //When to create the ensemble
-		40, //When to stop assimilating
+		200, //When to stop assimilating
 		0.01, //The step for ensemble integration
-		0.1,//The amount of time the ensemble is run before beginning to assimilate
+		0.1, //The amount of time the ensemble is run before beginning to assimilate
 		new Vector!(double, dimensions)(1), //The mean of the initial ensemble distribution
 		new Vector!(double, dimensions)(0.1), //The standard deviation of the initial ensemble distribution
 		20, //The size of the ensemble

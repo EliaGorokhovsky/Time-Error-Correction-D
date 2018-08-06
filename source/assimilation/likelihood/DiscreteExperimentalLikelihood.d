@@ -485,11 +485,9 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
             this.timeLikelihood = this.normalizedTimeLikelihood;
         } else {
             foreach(index, ref component; binQuantities.parallel) {
-                this.timeLikelihood[index] += component / binQuantities.sum;
+                this.timeLikelihood[index] += component;
             }
         }
-        /*import std.stdio;
-        writeln(binQuantities);*/
         return this.timeLikelihood;
     }
 
