@@ -1,3 +1,7 @@
-# Time-Error-Correction-D
+# Gaussianity
 This code is for a project to correct misreported observation times in data assimilation. 
-I am considering the possibility that, when making measurements of a dynamical system (such as radiosonde measurements), the measurement time may be reported with some error. In most cases, when measuring something, there is a window in which the measurements can be taken and still be reported as a certain time. For instance, when taking sonde measurements according to the guidelines in the National Weather Service's 2010 rawinsonde operations manual, the measurements should be taken at time 1200 and 2400 every day (Every 12 hours) and windows for an observation taken at time H are either from H-60 to H+30 or from H-60 to H+60. Given a measurement window and a priori knowledge of a measuring instrument's observation error variance (the variance of an assumed Gaussian distribution centered at the truth from which observations are chosen), the goal of this project is to infer the magnitude of time error and apply it during assimilation in order to improve forecasts.
+This branch is for an experimental change to the code that will allow the inferential likelihood algorithm to assume normality in time error. This could have several benefits:
+* Computations should be faster
+* The algorithm may be able to correct for time error internally
+* More work can be done towards making inference entirely analytical
+However, it adds an additional constraint to the problem.
