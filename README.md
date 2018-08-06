@@ -4,4 +4,4 @@ This branch is for an experimental change to the code that will allow the infere
 * Computations should be faster
 * The algorithm may be able to correct for time error internally
 * More work can be done towards making inference entirely analytical
-However, it adds an additional constraint to the problem.
+  However, it adds an additional constraint to the problem.
