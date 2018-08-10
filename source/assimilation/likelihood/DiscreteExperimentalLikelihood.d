@@ -185,16 +185,20 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
         //Using the Monte Carlo method, generate some number of pseudoObservations
         //Then fit them all to a normal
         //Only works with EAKF or other Gaussian-assuming filters for now
-        return this.randomNormalLikelihood(time, ensembles, 100); 
+        //return this.randomNormalLikelihood(time, ensembles, 100); 
         //------------------------KNOWN ERROR RANDOM NORMAL--------------------------------------------------
-        //Applies the Normal Likelihood method, but does not attempt to infer likelihood, instead using known values
+        //Applies the Normal Likelihood method, but does not attempt to infer likelihood, instead using known
+        //values
         //Only works with EAKF for now; requires minor changes to code for now
         //return this.knownErrorNormalLikelihood(time, ensembles, 100);
         //------------------------ANALYTIC NORMAL LIKELIHOOD-------------------------------------------------
         //Knowing the slope at the observation and assuming time error is normal, finds an updated likelihood
+        //by linear combination of Gaussians
         //Works with Gaussian-assuming filters
-        //return this.analyticNormalLikelihood(time)
-        //------------------------KNOWN ERROR ANALYTIC NORMAL-------------------------------------------------
+        //Infer the time likelihood
+        this.getTimeLikelihood(time, ensembles);
+        return this.analyticNormalLikelihood(time, this.expectedTime, this.timeDeviation);
+        //------------------------KNOWN ERROR ANALYTIC NORMAL------------------------------------------------
         //Knowing the slope at the observation and assuming time error is normal, finds an updated likelihood
         //Works with Gaussian-assuming filters
         //return this.analyticNormalLikelihood(time, this.timeOffset, this.timeError)
@@ -236,8 +240,8 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
      */
     Likelihood!dim analyticNormalLikelihood(
         double time, 
-        double expectedTimeOffset = this.expectedTime,    //These are inferred by default, but if we want to use a known time error we can replace them
-        double timeStandardDeviation = this.timeDeviation
+        double expectedTimeOffset,    //These are inferred by default, but if we want to use a known time error we can replace them
+        double timeStandardDeviation
         ) {
         Vector!(double, dim) obs = this.observations.value!dim(time); //Get the observation at the given time
         Vector!(double, dim) slope = this.integrator.slope(obs); //Get the slope of the system at the observation

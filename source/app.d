@@ -168,7 +168,7 @@ void main() {
 	string tag = "Inference-Spinup=2, Addition";
 	StopWatch stopwatch = StopWatch(AutoStart.no);
 	bool logThisExperiment = false; //Set this to false if you don't want to write the experiment to the logfile
-	double[] observationIntervals = [0.1];
+	double[] observationIntervals = [0.1, 0.5, 1];
 	double[] timeErrors = [];
 	foreach(i; 0..15) {
 		timeErrors ~= i * 0.001;
@@ -186,13 +186,13 @@ void main() {
 	Parameters!dimensions params = Parameters!dimensions(
 		new Vector!(double, dimensions)(1), //The initial point of the truth
 		0, //The initial time with which to associate the initial point
-		200, //The time at which to stop the experiment
+		80, //The time at which to stop the experiment
 		0.01, //The length of each step of the integrator
 		new RK4!dimensions(new Lorenz63()), //The integrator used to return points from previous points, and its system
 		0, //When to start observing
-		200, //When to stop observing
+		80, //When to stop observing
 		0, //When to create the ensemble
-		200, //When to stop assimilating
+		80, //When to stop assimilating
 		0.01, //The step for ensemble integration
 		0.1, //The amount of time the ensemble is run before beginning to assimilate
 		new Vector!(double, dimensions)(1), //The mean of the initial ensemble distribution
@@ -224,11 +224,14 @@ void main() {
 		string binMiddles = iota(0, params.bins, 1).map!(a => params.minimumOffset + (params.maximumOffset - params.minimumOffset) / (params.bins * 2) + a * (params.maximumOffset - params.minimumOffset) / (params.bins)).array.to!string[1 .. $ - 1];
 		File(filename, "a").writeln("Seed, Observation Interval, Observation Error, Time Error, Inferred Time Offset, Inferred Time Error, Inferred Time Offset Distribution: , ", binMiddles);
 	}
+	uint counter = 0;
 	foreach(observationInterval; observationIntervals) {
 		foreach(timeError; timeErrors) {
 			foreach(error; errors) {
 				foreach(ref seed; seeds) {
 					run(params, observationInterval, timeError, new Vector!(double, dimensions)(error), Random(seed), seed);
+					counter++;
+					writeln("Experiment progress: ", counter, "/", observationIntervals.length * timeErrors.length * errors.length * seeds.length, " runs = ", 100 * counter / (observationIntervals.length * timeErrors.length * errors.length * seeds.length), "%");
 				}
 			}
 		}
