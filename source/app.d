@@ -163,7 +163,7 @@ enum RunConfigurations: string {
 
 void main() {
 	RunConfigurations config = RunConfigurations.INFERRED_TIME_ERROR;
-	string filename = "data/dataCollection/InferredTimeError41.csv";
+	string filename = "data/datacollection/InferredTimeError41.csv";
 	string logfile = "data/ExperimentLog.txt";
 	string tag = "Inference-Spinup=2, Addition";
 	StopWatch stopwatch = StopWatch(AutoStart.no);
@@ -179,8 +179,8 @@ void main() {
 	//The second map statement will ensure that all program runs are the same
 	//You can also set random seeds to those outputted by the program to replicate its results
 	ulong[] seeds = iota(0, 1, 1)
-					/*.map!(a => unpredictableSeed)*/
-					.map!(a => cast(ulong)a)
+					.map!(a => unpredictableSeed)
+					/*.map!(a => cast(ulong)a)*/
 					.array;
 	//Package the parameters into one object
 	Parameters!dimensions params = Parameters!dimensions(

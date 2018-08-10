@@ -181,11 +181,11 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
         //Creates a scaled kernel within each bin - approaches the correct value as bin quantity increases
         //Only works with RHF for now
         //return this.likelihoodFromDiscreteTime(time, ensembles);
-        //-------------------------NORMAL LIKELIHOOD---------------------------------------------------------
+        //-------------------------RANDOM NORMAL LIKELIHOOD--------------------------------------------------
         //Using the Monte Carlo method, generate some number of pseudoObservations
         //Then fit them all to a normal
         //Only works with EAKF or other Gaussian-assuming filters for now
-        return this.normalLikelihood(time, ensembles, 100); 
+        return this.randomNormalLikelihood(time, ensembles, 100); 
         //------------------------KNOWN ERROR NORMAL---------------------------------------------------------
         //Applies the Normal Likelihood method, but does not attempt to infer likelihood, instead using known values
         //Only works with EAKF for now; requires minor changes to code for now
@@ -224,10 +224,19 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
     }
 
     /**
-     * Returns a normal likelihood from normal-assumed time
-     * TODO: Move into its own LikelihoodGetter
+     * Returns a normal likelihood analytically using the slope of the state at the observation
      */
-    Likelihood!dim normalLikelihood(double time, Timeseries!(Ensemble!dim) ensembles, uint kernels) {
+    Likelihood!dim analyticNormalLikelihood(double time, Timeseries!(Ensemble!dim) ensembles, uint kernels) {
+        Vector!(double, dim) obs = this.observations.value!dim(time); //Get the observation at the given time
+        Vector!(double, dim) slope = this.integrator.slope(obs); //Get the slope of the system at the observation
+        //The new likelihood has a mean at the inferred true time
+        return new Likelihood!dim(obs - slope * this.expectedTime, slope * this.timeDeviation + this.stateError);
+    }
+
+    /**
+     * Returns a normal likelihood from normal-assumed time
+     */
+    Likelihood!dim randomNormalLikelihood(double time, Timeseries!(Ensemble!dim) ensembles, uint kernels) {
         //Get the most recent ensemble
         Ensemble!dim ensemble = new Ensemble!dim(ensembles.members[$ - 1].members);
         //If the ensemble is not yet past the maximum offset, integrate it through the interval:
