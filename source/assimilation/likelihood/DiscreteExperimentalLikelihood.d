@@ -185,12 +185,13 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
         //Using the Monte Carlo method, generate some number of pseudoObservations
         //Then fit them all to a normal
         //Only works with EAKF or other Gaussian-assuming filters for now
-        //return this.randomNormalLikelihood(time, ensembles, 100); 
+        this.getTimeLikelihood(time, ensembles);
+        return this.knownErrorNormalLikelihood(time, ensembles, 100, this.expectedTime, this.timeDeviation); 
         //------------------------KNOWN ERROR RANDOM NORMAL--------------------------------------------------
         //Applies the Normal Likelihood method, but does not attempt to infer likelihood, instead using known
         //values
         //Only works with EAKF for now; requires minor changes to code for now
-        return this.knownErrorNormalLikelihood(time, ensembles, 100);
+        //return this.knownErrorNormalLikelihood(time, ensembles, 100, this.timeOffset, this.timeError);
         //------------------------ANALYTIC NORMAL LIKELIHOOD-------------------------------------------------
         //Knowing the slope at the observation and assuming time error is normal, finds an updated likelihood
         //by linear combination of Gaussians
@@ -208,7 +209,7 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
      * Fast alternative to normalLikelihood if error is known
      * Takes in observation time and a timeseries of the ensembles up until that time
      */
-    Likelihood!dim knownErrorNormalLikelihood(double time, Timeseries!(Ensemble!dim) ensembles, uint kernels) {
+    Likelihood!dim knownErrorNormalLikelihood(double time, Timeseries!(Ensemble!dim) ensembles, uint kernels, double knownTimeOffset, double knownTimeError) {
         //Get the value of the observation at the given time
         Vector!(double, dim) obs = this.observations.value!dim(time);
         //These lists will store the values of the pseudo measurements independently
@@ -217,7 +218,7 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
         //Do this a specified number of times: create a pseudo observation
         foreach(i; 0..kernels) {
             //Find a new time for the measurement
-            auto newTime = NormalVariable!double(this.timeOffset, this.timeError);
+            auto newTime = NormalVariable!double(knownTimeOffset, knownTimeError);
             //Find a trajectory through the observation, then find the value on that trajectory
             //at the observation time (the pseudo-truth)
             Vector!(double, dim) base = this.integrator.integrateTo(obs, newTime(*this.gen), 1);
@@ -247,64 +248,6 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
         Vector!(double, dim) slope = this.integrator.slope(obs); //Get the slope of the system at the observation
         //The new likelihood has a mean at the inferred true time
         return new Likelihood!dim(obs - slope * this.expectedTime, slope * this.timeDeviation + this.stateError);
-    }
-
-    /**
-     * Returns a normal likelihood from normal-assumed time
-     */
-    Likelihood!dim randomNormalLikelihood(double time, Timeseries!(Ensemble!dim) ensembles, uint kernels) {
-        //Get the most recent ensemble
-        Ensemble!dim ensemble = new Ensemble!dim(ensembles.members[$ - 1].members);
-        //If the ensemble is not yet past the maximum offset, integrate it through the interval:
-        if(ensembles.times[$ - 1] + maximumOffset > ensembles.times[$ - 1]) {
-            //The following code does not work because of dlang iota implementation, so I have bypassed that manually for now
-            /*foreach(i; iota(start, end, step)) {
-                ensemble = this.integrator(ensemble, ensembles.dt);
-                ensembles.add(i + ensembles.dt, ensemble);
-            }*/
-            double start = ensembles.times[$ - 1];
-            double end = start + this.maximumOffset;
-            double step = ensembles.dt;
-            int steps = cast(int)((end - start) / step);
-            foreach(i; 0..steps) {
-                double placeTime = start + step * i;
-                ensemble = this.integrator(ensemble, step);
-                ensembles.add(placeTime + step, ensemble);
-            }
-        }
-        //Make sure the observation time fits an observation
-        assert(this.observations.times.any!(a => a.approxEqual(time, 1e-6, 1e-6)), "Time not in observation times");
-        //Get the ensemble at the observation time
-        ensemble = ensembles.value(time, this.integrator);
-        //Infer the time likelihood
-        this.getTimeLikelihood(time, ensembles);
-        //Get the observation at the given time
-        Vector!(double, dim) obs = this.observations.value!dim(time);
-        //Get the new inferred time likelihood as a Gaussian
-        double expectedOffset = this.expectedTime;
-        double timeDeviation = this.timeDeviation;
-        //These lists will store the values of the pseudo measurements independently
-        //So that we can assimilate all variables separately
-        double[][dim] pseudoMeasurements;
-        //Do this a specified number of times: create a pseudo observation
-        foreach(i; 0..kernels) {
-            //Find a new time for the measurement
-            auto newTime = NormalVariable!double(this.timeOffset, this.timeError);
-            //Find a trajectory through the observation, then find the value on that trajectory
-            //at the observation time (the pseudo-truth)
-            Vector!(double, dim) base = this.integrator.integrateTo(obs, newTime(*this.gen), 1);
-            NormalVariable!double normal;
-            static foreach (j; 0..dim) {
-                normal = NormalVariable!double(base[j], this.stateError[j]);
-                pseudoMeasurements[j] ~= normal(*this.gen);
-            }
-        }
-        //Find the mean of the pseudo-observations
-        Vector!(double, dim) meanVector = new Vector!(double, dim)(pseudoMeasurements[].map!(a => a.mean).array);
-        //Find the standard deviation of the pseudo-observations
-        Vector!(double, dim) deviationVector = new Vector!(double, dim)(pseudoMeasurements[].map!(a => a.standardDeviation!1).array);
-        //Return as a Gaussian likelihood with the above mean and standard deviation
-        return new Likelihood!dim(meanVector, deviationVector);
     }
 
     /**
