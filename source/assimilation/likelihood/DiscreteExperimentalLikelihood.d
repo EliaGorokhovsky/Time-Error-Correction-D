@@ -190,14 +190,14 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
         //Applies the Normal Likelihood method, but does not attempt to infer likelihood, instead using known
         //values
         //Only works with EAKF for now; requires minor changes to code for now
-        //return this.knownErrorNormalLikelihood(time, ensembles, 100);
+        return this.knownErrorNormalLikelihood(time, ensembles, 100);
         //------------------------ANALYTIC NORMAL LIKELIHOOD-------------------------------------------------
         //Knowing the slope at the observation and assuming time error is normal, finds an updated likelihood
         //by linear combination of Gaussians
         //Works with Gaussian-assuming filters
         //Infer the time likelihood
-        this.getTimeLikelihood(time, ensembles);
-        return this.analyticNormalLikelihood(time, this.expectedTime, this.timeDeviation);
+        //this.getTimeLikelihood(time, ensembles);
+        //return this.analyticNormalLikelihood(time, this.expectedTime, this.timeDeviation);
         //------------------------KNOWN ERROR ANALYTIC NORMAL------------------------------------------------
         //Knowing the slope at the observation and assuming time error is normal, finds an updated likelihood
         //Works with Gaussian-assuming filters
@@ -493,10 +493,10 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
 
             //Option 3: Smooth multivariate
             //Assume error is dimensionally independent, then find probability
-            //By finding the value of a multivariate (in this case trivariate) normal pdf at the value of distance
+            //By finding the value of a multivariate normal pdf at the value of distance
             //The covariance matrix of the ensemble has the variance across the diagonals and the covariance everywhere else
             Matrix!(double, dim, dim) ensembleCovariance = covariance!(dim, 1)(ensembleValues[i].valueLists);
-            //The value of the probability is given by the trivariate normal PDF at the observation with mean ensemble mean
+            //The value of the probability is given by the normal PDF at the observation with mean ensemble mean
             //and covariance the sum of the ensemble covariance and the obs error covariance
             //This is the probability of taking the observation if the truth is taken from multivariate normal distribution
             //that is represented by the ensemble

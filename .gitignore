@@ -16,3 +16,4 @@ time-error-correction-d-test-*
 time-error-correction-d
 *.ds_store
 *.txt
+*.xlsx
