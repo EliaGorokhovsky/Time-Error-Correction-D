@@ -6,6 +6,7 @@ import std.math;
 import std.range;
 import std.typecons;
 import std.file;
+import std.stdio;
 import assimilation.Assimilator;
 import assimilation.EAKF;
 import assimilation.likelihood.DiscreteExperimentalLikelihood;
@@ -16,6 +17,7 @@ import data.Timeseries;
 import experiment.Analytics;
 import experiment.error.ErrorGenerator;
 import integrators.Integrator;
+import math.Matrix;
 import math.Vector;
 import systems.System;
 
@@ -33,6 +35,7 @@ class Experiment(uint dim) {
 
     Timeseries!(Vector!(double, dim)) truth;
     Timeseries!(Vector!(double, dim)) observations;
+    Timeseries!double observationTimes;
     Timeseries!(Ensemble!dim) ensembleSeries;
 
     this(Integrator!dim integrator, Assimilator!dim assimilator) {
@@ -75,9 +78,13 @@ class Experiment(uint dim) {
      */
     Timeseries!(Vector!(double, dim)) getObservations(double startTime, double endTime, double interval) {
         Timeseries!(Vector!(double, dim)) observations = new Timeseries!(Vector!(double, dim))();
+        Timeseries!double observationTimes = new Timeseries!double();
         foreach(i; iota(startTime, endTime, interval)) {
-            observations.add(i, this.errorGen(i));
+            Tuple!(double, Vector!(double, dim)) obs = this.errorGen.generate(i);
+            observationTimes.add(i, obs[0]);
+            observations.add(i, obs[1]);
         }
+        this.observationTimes = observationTimes;
         this.observations = observations;
         return this.observations;
     }
@@ -86,7 +93,8 @@ class Experiment(uint dim) {
      * Runs an ensemble over an interval
      * Spin-up time: no assimilation
      */
-    Timeseries!(Ensemble!dim) getEnsembleTimeseries(bool experiment)(double startTime, double endTime, double dt, double spinup, double priming, Ensemble!dim ensemble) {        
+    Timeseries!(Ensemble!dim) getEnsembleTimeseries(bool experiment)(double startTime, double endTime, double dt, double spinup, double priming, Ensemble!dim ensemble) {  
+        File("data/datacollection/testing2.csv", "a").writeln("Inferred");      
         Timeseries!(Ensemble!dim) ensembleSeries = new Timeseries!(Ensemble!dim)();
         ensembleSeries.add(0, ensemble);
         assert(ensembleSeries.members !is null, "Ensemble series is null");
@@ -102,6 +110,21 @@ class Experiment(uint dim) {
                 else {
                     ensemble = this.assimilator(ensemble);
                 }
+                //Record observation time and expected observation time.
+                if (DiscreteExperimentalLikelihood!3 lik = cast(DiscreteExperimentalLikelihood!3) (this.likelihoodGetter)) {
+                    Vector!(double, dim) obs = this.observations.valueAtTime(i);
+                    Vector!(double, dim) slope = this.integrator.slope(ensemble.eMean);
+                    Vector!(double, dim) errors = this.likelihoodGetter.stateError;
+                    Vector!(double, dim) diff = obs - ensemble.eMean;
+                    double errSum = iota(0, dim, 1).fold!((sum, i) => sum + slope[i] * slope[i] * pow(errors[i], -2));
+                    double diffErrSum = iota(0, dim, 1).fold!((sum, i) => sum + diff[i] * slope[i] * pow(errors[i], -2));
+                    double timeError = lik.timeVariance - (dim + 1) / errSum;
+                    double inverseSquareTimeError = 1 / timeError;
+                    double denom = errSum + inverseSquareTimeError;
+                    double mean = diffErrSum / denom;
+                    double var = 1 / denom;
+                    //File("test.csv", "a").writeln(i, ", ", this.observationTimes.valueAtTime(i) - i, ", ", mean, ", ", var);
+                } 
             }
             /*if(i % 5 == 0) { 
                 writeln("Time ", i, " for ", experiment? "treatment" : "control");

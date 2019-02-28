@@ -1,3 +1,6 @@
+/*
+All code written by Elia Gorokhovsky
+*/
 import std.algorithm;
 import std.array;
 import std.conv;
@@ -68,7 +71,7 @@ void run(Parameters!dimensions params, double observationInterval, double timeEr
 		static if (verboseRun) writeln("Successfully generated observations.");
 		treatment.setLikelihood(
 			new DiscreteExperimentalLikelihood!dimensions(
-				treatment.observations, expectedError, params.integrator, params.minimumOffset, params.maximumOffset, params.bins, &gen
+				treatment.observations, expectedError, params.integrator, params.minimumOffset, params.maximumOffset, params.bins, &gen, //0, timeError
 			)
 		);
 		treatment.standardLikelihood = new LikelihoodGetter!dimensions(treatment.observations, expectedError);
@@ -150,6 +153,18 @@ void run(Parameters!dimensions params, double observationInterval, double timeEr
 		DiscreteExperimentalLikelihood!dimensions treatmentLikelihood = cast(DiscreteExperimentalLikelihood!dimensions) treatment.likelihoodGetter;
 		File(params.datafile, "a").writeln(seed, ", ", observationInterval, ",", error[0], ", ", timeError, ", ", treatmentLikelihood.expectedTime, ",", treatmentLikelihood.timeDeviation, ",,", treatmentLikelihood.timeLikelihood.to!string[1 .. $ - 1]);
 		writeln("Inferred time error for time error ", timeError, " is ", treatmentLikelihood.timeDeviation);
+	} else if (params.config == RunConfigurations.AVERAGE_DISTANCE) {
+		writeln("Experiment:");
+		Experiment!dimensions treatment = new Experiment!dimensions(params.integrator, params.experimentalAssimilator);
+		treatment.getTruth(params.startState, params.startTime, params.endTime, params.dt);
+		treatment.setError(new GaussianTimeError!dimensions(timeError, actualError, treatment.truth, params.integrator, &gen));
+		treatment.getObservations(params.obsStartTime, params.obsEndTime, params.obsEndTime - params.obsStartTime + 10);
+		treatment.setLikelihood(new LikelihoodGetter!dimensions(treatment.observations, expectedError));
+		treatment.getEnsembleTimeseries!false(
+			params.ensembleStartTime, params.ensembleEndTime, params.ensembledt, params.ensembleEndTime, params.ensembleEndTime, new Ensemble!dimensions(params.ensembleGenesis, 1, params.ensembleDeviation, &gen)
+		);
+		immutable double treatmentRMSE = RMSE!dimensions(treatment.ensembleSeries, treatment.truth);
+		writeln("Treatment RMSE: ", treatmentRMSE);
 	}
 
 }
@@ -158,41 +173,45 @@ enum RunConfigurations: string {
 	COMPARE_RMSE = "Compare RMSE",
 	CONTROL_RMSE = "Control RMSE",
 	TREATMENT_RMSE = "Treatment RMSE",
-	INFERRED_TIME_ERROR = "Inferred Time Error"
+	INFERRED_TIME_ERROR = "Inferred Time Error",
+	AVERAGE_DISTANCE = "Average Distance"
 }
 
 void main() {
-	RunConfigurations config = RunConfigurations.COMPARE_RMSE;
-	string filename = "data/datacollection/InferredTimeError41.csv";
+	RunConfigurations config = RunConfigurations.TREATMENT_RMSE;
+	string filename = "data/datacollection/ObsErrorChanges10.csv";
 	string logfile = "data/ExperimentLog.txt";
-	string tag = "Inference-Spinup=2, Addition";
+	string tag = "Trialing control with changing obs error";
 	StopWatch stopwatch = StopWatch(AutoStart.no);
-	bool logThisExperiment = false; //Set this to false if you don't want to write the experiment to the logfile
-	double[] observationIntervals = [0.1, 0.5, 1];
-	double[] timeErrors = [];
-	foreach(i; 8..15) {
+	bool logThisExperiment = true; //Set this to false if you don't want to write the experiment to the logfile
+	double[] observationIntervals = [0.1];
+	double[] timeErrors = [0.01];
+	/*foreach(i; 0..15) {
 		timeErrors ~= i * 0.001;
-	}
+	}*/
 	double[] errors = [0.1];
+	/*foreach(i; 1..500) {
+		errors ~= i * 0.02;
+	}*/
 	//This will set up a number of random seeds
 	//The first map statement will give different random seeds every program run
 	//The second map statement will ensure that all program runs are the same
 	//You can also set random seeds to those outputted by the program to replicate its results
 	ulong[] seeds = iota(0, 1, 1)
-					.map!(a => unpredictableSeed)
-					/*.map!(a => cast(ulong)a)*/
+					/*.map!(a => unpredictableSeed)*/
+					.map!(a => cast(ulong)a)
 					.array;
 	//Package the parameters into one object
 	Parameters!dimensions params = Parameters!dimensions(
 		new Vector!(double, dimensions)(1), //The initial point of the truth
 		0, //The initial time with which to associate the initial point
-		40, //The time at which to stop the experiment
+		80, //The time at which to stop the experiment
 		0.01, //The length of each step of the integrator
 		new RK4!dimensions(new Lorenz63()), //The integrator used to return points from previous points, and its system
 		0, //When to start observing
-		40, //When to stop observing
+		80, //When to stop observing
 		0, //When to create the ensemble
-		40, //When to stop assimilating
+		80, //When to stop assimilating
 		0.01, //The step for ensemble integration
 		0.1, //The amount of time the ensemble is run before beginning to assimilate
 		new Vector!(double, dimensions)(1), //The mean of the initial ensemble distribution
@@ -223,7 +242,7 @@ void main() {
 	} else if(config == RunConfigurations.INFERRED_TIME_ERROR) {
 		string binMiddles = iota(0, params.bins, 1).map!(a => params.minimumOffset + (params.maximumOffset - params.minimumOffset) / (params.bins * 2) + a * (params.maximumOffset - params.minimumOffset) / (params.bins)).array.to!string[1 .. $ - 1];
 		File(filename, "a").writeln("Seed, Observation Interval, Observation Error, Time Error, Inferred Time Offset, Inferred Time Error, Inferred Time Offset Distribution: , ", binMiddles);
-	}
+	} else if(config == RunConfigurations.AVERAGE_DISTANCE){}
 	uint counter = 0;
 	foreach(observationInterval; observationIntervals) {
 		foreach(timeError; timeErrors) {

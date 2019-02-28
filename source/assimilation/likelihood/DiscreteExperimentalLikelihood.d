@@ -65,6 +65,14 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
      * Returns standard deviation of time likelihood fit to a Gaussian
      */
     @property double timeDeviation() {
+        //Compute the square root of the variance 
+        return sqrt(this.timeVariance);
+    }
+
+    /**
+     * Returns variance of time likelihood fit to a Gaussian
+     */
+    @property double timeVariance() {
         //Get mean of time likelihood distribution
         double expectedOffset = this.expectedTime;
         //Ensure the time likelihood is properly sized
@@ -82,7 +90,7 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
             component = ((component - expectedOffset).pow(2)) * likelihood[index];
         }
         //Compute the square root of the weighted average of the squared deviations, i.e. the square root of the variance 
-        return sqrt(binMiddles.sum);
+        return binMiddles.sum;
     }
 
     /** 

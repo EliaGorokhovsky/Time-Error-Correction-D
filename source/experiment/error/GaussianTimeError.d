@@ -4,6 +4,9 @@ import std.algorithm;
 import std.array;
 import std.math;
 import std.range;
+import std.file;
+import std.stdio;
+import std.typecons;
 import mir.random;
 import mir.random.variable;
 import data.Timeseries;
@@ -35,11 +38,11 @@ class GaussianTimeError(uint dim) : ErrorGenerator!dim {
     /**
      * Gets a point observation at a given time by first getting a time from a normal distribution and then a position
      */
-    override Vector!(double, dim) generate(double time) {
-        auto newTime = NormalVariable!double(time, this.timeError);
-        Vector!(double, dim) base = this.truth.value(clamp(newTime(*this.gen), 0, 10000000000), this.integrator);
+    override Tuple!(double, Vector!(double, dim)) generate(double time) {
+        auto newTime = NormalVariable!double(time, this.timeError)(*this.gen);
+        Vector!(double, dim) base = this.truth.value(clamp(newTime, 0, 10000000000), this.integrator);
         double[dim] vars = iota(0, dim, 1).map!(a => NormalVariable!double(base[a], this.error[a])(*this.gen)).array;
-        return new Vector!(double, dim)(vars);
+        return tuple(newTime, new Vector!(double, dim)(vars));
     }
 
 }

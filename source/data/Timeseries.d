@@ -113,6 +113,17 @@ class Timeseries(T) {
             }
         }
     }
+
+    /**
+     * Only works if the exact value exists in the times.
+     */
+    T valueAtTime(double time) {
+        if(this.times.any!(a => a.approxEqual(time, 1e-6, 1e-6))) { 
+            double newTime = this.times.find!(a => a.approxEqual(time, 1e-6, 1e-6))[0];
+            return this.timeAssociate[newTime]; 
+        }
+        return this.members[0];
+    }
     
     /**
      * Gets the nth value of the timeseries
