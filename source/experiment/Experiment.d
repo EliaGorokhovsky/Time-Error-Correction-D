@@ -36,11 +36,53 @@ class Experiment(uint dim) {
     Timeseries!(Vector!(double, dim)) truth;
     Timeseries!(Vector!(double, dim)) observations;
     Timeseries!double observationTimes;
+    Timeseries!double inferredObservationTimes;
     Timeseries!(Ensemble!dim) ensembleSeries;
+
+    /**
+     * Returns the RMSE of the ensemble
+     */
+    @property double ensembleRMSE() {
+        return RMSE!dim(this.ensembleSeries, this.truth);
+    }
 
     this(Integrator!dim integrator, Assimilator!dim assimilator) {
         this.integrator = integrator;
         this.assimilator = assimilator;
+    }
+
+    /**
+     * Returns the RMSE of the observation time reports
+     */
+    double getTimeErrorRMSE(ulong start) {
+        return sqrt(
+            iota(start, this.observationTimes.length, 1)
+                .fold!((sum, i) => sum + pow(this.observationTimes.times[i] - this.observationTimes.members[i], 2))(0.0)
+            / (this.observationTimes.length - start)
+        );
+    }
+
+    /**
+     * Returns the RMSE of the calculated time reports
+     */
+    double getInferredTimeErrorRMSE(ulong start) {
+        return sqrt(
+            iota(start, this.inferredObservationTimes.length, 1)
+                .fold!((sum, i) => sum + pow(this.inferredObservationTimes.times[i] - this.observationTimes.valueAtTime(this.inferredObservationTimes.times[i]) + this.inferredObservationTimes.members[i], 2))(0.0)
+            / (this.inferredObservationTimes.length - start)
+        );
+    }
+
+    /**
+     * Returns how frequently the algorithm correctly guesses whether the observation time is over- or under- estimated
+     */
+    double getDirectionGuessRate(ulong start) {
+        return cast(double)(iota(start, this.inferredObservationTimes.length, 1)
+                .count!(i => 
+                (this.observationTimes.members[i + 1] < this.observationTimes.times[i + 1] && this.inferredObservationTimes.members[i] < 0) 
+                || 
+                (this.observationTimes.members[i + 1] > this.observationTimes.times[i + 1] && this.inferredObservationTimes.members[i] > 0)
+            )()) / (this.inferredObservationTimes.length - start);
     }
 
     /** 
@@ -96,13 +138,14 @@ class Experiment(uint dim) {
     Timeseries!(Ensemble!dim) getEnsembleTimeseries(bool experiment)(double startTime, double endTime, double dt, double spinup, double priming, Ensemble!dim ensemble) {  
         File("data/datacollection/testing2.csv", "a").writeln("Inferred");      
         Timeseries!(Ensemble!dim) ensembleSeries = new Timeseries!(Ensemble!dim)();
+        Timeseries!double inferredObservationTimes = new Timeseries!double();
         ensembleSeries.add(0, ensemble);
         assert(ensembleSeries.members !is null, "Ensemble series is null");
         foreach(i; iota(startTime, endTime, dt)) {
             if(this.observations.times.any!(a => a.approxEqual(i, 1e-06, 1e-06)) && i >= spinup) {
                 //ensemble *= 1.5;
                 Timeseries!(Ensemble!dim) placeholder = new Timeseries!(Ensemble!dim)(ensembleSeries.members, ensembleSeries.times);
-                this.assimilator.setLikelihood(experiment? this.likelihoodGetter(i, placeholder) : this.likelihoodGetter(i));
+                this.assimilator.setLikelihood(experiment? this.likelihoodGetter(i, placeholder) : new Likelihood!3(this.likelihoodGetter(i).gaussianMean, this.likelihoodGetter(i).gaussianDeviation * sqrt(2.0)));
                 if(experiment && i < priming) {
                     this.standardEAKF.setLikelihood(this.standardLikelihood(i));
                     ensemble = this.standardEAKF(ensemble);
@@ -113,17 +156,23 @@ class Experiment(uint dim) {
                 //Record observation time and expected observation time.
                 if (DiscreteExperimentalLikelihood!3 lik = cast(DiscreteExperimentalLikelihood!3) (this.likelihoodGetter)) {
                     Vector!(double, dim) obs = this.observations.valueAtTime(i);
-                    Vector!(double, dim) slope = this.integrator.slope(ensemble.eMean);
+                    Vector!(double, dim) slope = /*new Ensemble!dim(ensemble.members.map!(a => this.integrator.slope(a)).array).eMean;*/
+                                                this.integrator.slope(ensemble.eMean);
                     Vector!(double, dim) errors = this.likelihoodGetter.stateError;
                     Vector!(double, dim) diff = obs - ensemble.eMean;
-                    double errSum = iota(0, dim, 1).fold!((sum, i) => sum + slope[i] * slope[i] * pow(errors[i], -2));
-                    double diffErrSum = iota(0, dim, 1).fold!((sum, i) => sum + diff[i] * slope[i] * pow(errors[i], -2));
-                    double timeError = lik.timeVariance - (dim + 1) / errSum;
+                    double errSum = iota(0, dim, 1).fold!((sum, i) => sum + slope[i] * slope[i] * pow(errors[i], -2))(0.0);
+                    double diffErrSum = iota(0, dim, 1).fold!((sum, i) => sum + diff[i] * slope[i] * pow(errors[i], -2))(0.0);
+                    double timeError = lik.timeVariance/* - (dim + 1) / errSum*/;
                     double inverseSquareTimeError = 1 / timeError;
                     double denom = errSum + inverseSquareTimeError;
                     double mean = diffErrSum / denom;
                     double var = 1 / denom;
-                    //File("test.csv", "a").writeln(i, ", ", this.observationTimes.valueAtTime(i) - i, ", ", mean, ", ", var);
+                    //if (abs(mean) <= 5000000 * sqrt(timeError)) {
+                        inferredObservationTimes.add(i, mean);
+                    //} else {*/
+                        //inferredObservationTimes.add(i, this.observationTimes.valueAtTime(i) - i);
+                    //}
+                    File("test10.csv", "a").writeln(i, ", ", this.observationTimes.valueAtTime(i) - i, ", ", mean, ", ", var, ", ", this.truth.valueAtTime(i), ", ", obs, ", ", ensemble.eMean, ", ", slope, ", ", lik.timeVariance, ", ", errSum, ", ", diffErrSum, ", ", inverseSquareTimeError, ",", denom);
                 } 
             }
             /*if(i % 5 == 0) { 
@@ -133,6 +182,7 @@ class Experiment(uint dim) {
             ensembleSeries.add(i + dt, ensemble);
         }
         this.ensembleSeries = ensembleSeries;
+        this.inferredObservationTimes = inferredObservationTimes;
         return this.ensembleSeries;
     }
 
