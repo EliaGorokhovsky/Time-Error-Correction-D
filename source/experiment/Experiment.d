@@ -115,6 +115,13 @@ class Experiment(uint dim) {
     }
 
     /**
+     * Sets the true state to the input
+     */
+    void setTruth(Timeseries!(Vector!(double, dim)) truth) {
+        this.truth = truth;
+    }
+
+    /**
      * Gets a set of observations 
      * Ends at the last interval before endTime
      */
@@ -132,20 +139,32 @@ class Experiment(uint dim) {
     }
 
     /**
+     * Sets the observations for this run to the inputted ones
+     */
+    void setObservations(Timeseries!(Vector!(double, dim)) observations, Timeseries!double observationTimes) {
+        this.observations = observations;
+        this.observationTimes = observationTimes;
+    }
+
+    /**
      * Runs an ensemble over an interval
      * Spin-up time: no assimilation
      */
-    Timeseries!(Ensemble!dim) getEnsembleTimeseries(bool experiment)(double startTime, double endTime, double dt, double spinup, double priming, Ensemble!dim ensemble) {  
-        File("data/datacollection/testing2.csv", "a").writeln("Inferred");      
+    Timeseries!(Ensemble!dim) getEnsembleTimeseries(bool experiment)(string testfilename, double startTime, double endTime, double dt, double spinup, double priming, Ensemble!dim ensemble) {  
+        File(testfilename, "a").writeln("Time, Observed time error, Predicted time error, Time error uncertainty, Truth,,, Observation,,, Ensemble Mean,,, Ensemble Variance,,, Likelihood Standard Deviation,,, Slope,,, Predicted time err var, Errsum, DiffErrsum, Inverse square time error, Time offset calculation denom");
         Timeseries!(Ensemble!dim) ensembleSeries = new Timeseries!(Ensemble!dim)();
         Timeseries!double inferredObservationTimes = new Timeseries!double();
         ensembleSeries.add(0, ensemble);
         assert(ensembleSeries.members !is null, "Ensemble series is null");
         foreach(i; iota(startTime, endTime, dt)) {
             if(this.observations.times.any!(a => a.approxEqual(i, 1e-06, 1e-06)) && i >= spinup) {
-                //ensemble *= 1.5;
+                //Prior inflation goes here.
+                ensemble *= 1.06;
                 Timeseries!(Ensemble!dim) placeholder = new Timeseries!(Ensemble!dim)(ensembleSeries.members, ensembleSeries.times);
-                this.assimilator.setLikelihood(experiment? this.likelihoodGetter(i, placeholder) : new Likelihood!3(this.likelihoodGetter(i).gaussianMean, this.likelihoodGetter(i).gaussianDeviation * sqrt(2.0)));
+                //Sets the likelihood used by assimilation. Likelihood inflation goes here.
+                Likelihood!dim likelihood = experiment? this.likelihoodGetter(i, placeholder) : new Likelihood!dim(this.likelihoodGetter(i).gaussianMean, this.likelihoodGetter(i).gaussianDeviation);
+                Likelihood!dim inflatedLikelihood = new Likelihood!dim(likelihood.gaussianMean, likelihood.gaussianDeviation * sqrt(2.0));
+                this.assimilator.setLikelihood(inflatedLikelihood);
                 if(experiment && i < priming) {
                     this.standardEAKF.setLikelihood(this.standardLikelihood(i));
                     ensemble = this.standardEAKF(ensemble);
@@ -168,11 +187,27 @@ class Experiment(uint dim) {
                     double mean = diffErrSum / denom;
                     double var = 1 / denom;
                     //if (abs(mean) <= 5000000 * sqrt(timeError)) {
-                        inferredObservationTimes.add(i, mean);
+                    inferredObservationTimes.add(i, mean);
                     //} else {*/
                         //inferredObservationTimes.add(i, this.observationTimes.valueAtTime(i) - i);
                     //}
-                    File("test10.csv", "a").writeln(i, ", ", this.observationTimes.valueAtTime(i) - i, ", ", mean, ", ", var, ", ", this.truth.valueAtTime(i), ", ", obs, ", ", ensemble.eMean, ", ", slope, ", ", lik.timeVariance, ", ", errSum, ", ", diffErrSum, ", ", inverseSquareTimeError, ",", denom);
+                    /*File(testfilename, "a").writeln(
+                        i, ", ", 
+                        this.observationTimes.valueAtTime(i) - i, ", ", 
+                        mean, ", ", 
+                        var, ", ", 
+                        this.truth.valueAtTime(i), ", ", 
+                        obs, ", ", 
+                        ensemble.eMean, ", ", 
+                        ensemble.eVariance, ", ", 
+                        likelihood.gaussianDeviation, ", ", 
+                        slope, ", ", 
+                        lik.timeVariance, ", ", 
+                        errSum, ", ", 
+                        diffErrSum, ", ", 
+                        inverseSquareTimeError, ",", 
+                        denom
+                    );*/
                 } 
             }
             /*if(i % 5 == 0) { 

@@ -43,6 +43,7 @@ struct Parameters(uint dim) {
     double[] errors; ///The different state errors that were tested
     ulong[] seeds; ///The different random seeds that were used for the trials
     string datafile; ///The name of the file that is written to
+    string testfile; ///The name of the file that extra data are written to
     RunConfigurations config; ///The type of experiment that is being run
     string tag; ///User-specified information about the experiment
 
@@ -53,6 +54,7 @@ struct Parameters(uint dim) {
         return
         "Experiment:" ~
         "\nFilename: " ~ this.datafile ~
+        "\nTestfilename: " ~ this.testfile ~
         "\nRun Configuration: " ~ this.config ~
         "\nTag: " ~ this.tag ~
         "\nDimensions: " ~ dim.to!string ~
