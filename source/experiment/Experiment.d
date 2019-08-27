@@ -151,7 +151,7 @@ class Experiment(uint dim) {
      * Spin-up time: no assimilation
      */
     Timeseries!(Ensemble!dim) getEnsembleTimeseries(bool experiment)(string testfilename, double startTime, double endTime, double dt, double spinup, double priming, Ensemble!dim ensemble) {  
-        File(testfilename, "a").writeln("Time, Observed time error, Predicted time error, Time error uncertainty, Truth,,, Observation,,, Ensemble Mean,,, Ensemble Variance,,, Likelihood Standard Deviation,,, Slope,,, Predicted time err var, Errsum, DiffErrsum, Inverse square time error, Time offset calculation denom");
+        //File(testfilename, "a").writeln("Time, Observed time error, Predicted time error, Time error uncertainty, Truth,,, Observation,,, Ensemble Mean,,, Ensemble Variance,,, Likelihood Standard Deviation,,, Slope,,, Predicted time err var, Errsum, DiffErrsum, Inverse square time error, Time offset calculation denom");
         Timeseries!(Ensemble!dim) ensembleSeries = new Timeseries!(Ensemble!dim)();
         Timeseries!double inferredObservationTimes = new Timeseries!double();
         ensembleSeries.add(0, ensemble);
@@ -159,12 +159,12 @@ class Experiment(uint dim) {
         foreach(i; iota(startTime, endTime, dt)) {
             if(this.observations.times.any!(a => a.approxEqual(i, 1e-06, 1e-06)) && i >= spinup) {
                 //Prior inflation goes here.
-                ensemble *= 1.06;
+                //ensemble *= 1.5;
                 Timeseries!(Ensemble!dim) placeholder = new Timeseries!(Ensemble!dim)(ensembleSeries.members, ensembleSeries.times);
                 //Sets the likelihood used by assimilation. Likelihood inflation goes here.
                 Likelihood!dim likelihood = experiment? this.likelihoodGetter(i, placeholder) : new Likelihood!dim(this.likelihoodGetter(i).gaussianMean, this.likelihoodGetter(i).gaussianDeviation);
-                Likelihood!dim inflatedLikelihood = new Likelihood!dim(likelihood.gaussianMean, likelihood.gaussianDeviation * sqrt(2.0));
-                this.assimilator.setLikelihood(inflatedLikelihood);
+                //Likelihood!dim inflatedLikelihood = new Likelihood!dim(likelihood.gaussianMean, likelihood.gaussianDeviation * sqrt(2.0));
+                this.assimilator.setLikelihood(likelihood);
                 if(experiment && i < priming) {
                     this.standardEAKF.setLikelihood(this.standardLikelihood(i));
                     ensemble = this.standardEAKF(ensemble);
@@ -181,11 +181,15 @@ class Experiment(uint dim) {
                     Vector!(double, dim) diff = obs - ensemble.eMean;
                     double errSum = iota(0, dim, 1).fold!((sum, i) => sum + slope[i] * slope[i] * pow(errors[i], -2))(0.0);
                     double diffErrSum = iota(0, dim, 1).fold!((sum, i) => sum + diff[i] * slope[i] * pow(errors[i], -2))(0.0);
+                    //For unknown error
                     double timeError = lik.timeVariance/* - (dim + 1) / errSum*/;
+                    //For known error
+                    //double timeError = lik.timeError * lik.timeError;
                     double inverseSquareTimeError = 1 / timeError;
                     double denom = errSum + inverseSquareTimeError;
                     double mean = diffErrSum / denom;
                     double var = 1 / denom;
+
                     //if (abs(mean) <= 5000000 * sqrt(timeError)) {
                     inferredObservationTimes.add(i, mean);
                     //} else {*/

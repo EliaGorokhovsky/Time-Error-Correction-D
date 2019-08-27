@@ -191,7 +191,7 @@ void run(Parameters!dimensions params, double observationInterval, double timeEr
 			params.ensembledt, 
 			params.spinup, 
 			0,
-			ensemble 
+			ensemble.copy() 
 		);
 		static if (verboseRun) writeln("Successfully ran ensemble.");
 		immutable double controlRMSE = RMSE!dimensions(control.ensembleSeries, control.truth);
@@ -212,7 +212,9 @@ void run(Parameters!dimensions params, double observationInterval, double timeEr
 				params.minimumOffset, 
 				params.maximumOffset, 
 				params.bins, 
-				&gen, //0, timeError
+				&gen, 
+				//0, //known error
+				//timeError //known error
 			)
 		);
 		treatment.standardLikelihood = new LikelihoodGetter!dimensions(treatment.observations, expectedError);
@@ -224,10 +226,12 @@ void run(Parameters!dimensions params, double observationInterval, double timeEr
 			params.ensembledt, 
 			params.spinup, 
 			5, 
-			ensemble		
+			ensemble.copy()		
 		);
 		static if (verboseRun) writeln("Successfully ran ensemble.");
 		immutable double treatmentRMSE = RMSE!dimensions(treatment.ensembleSeries, treatment.truth);
+		DiscreteExperimentalLikelihood!dimensions treatmentLikelihood = cast(DiscreteExperimentalLikelihood!dimensions) treatment.likelihoodGetter;
+		writeln("Treatment RMSE for time error ", timeError, " is ", treatmentRMSE);
 		File(params.datafile, "a").writeln(
 			"'", seed, ",",
 			observationInterval, ",", 
@@ -239,9 +243,8 @@ void run(Parameters!dimensions params, double observationInterval, double timeEr
 			treatment.getInferredTimeErrorRMSE(0), ",", 
 			treatment.getDirectionGuessRate(0), "," ,
 			controlRMSE, ",",
-			treatmentRMSE, ",",
+			treatmentRMSE, ","
 		);
-		writeln("Treatment RMSE for time error ", timeError, " is ", treatmentRMSE);
 	}
 
 }
@@ -257,15 +260,15 @@ enum RunConfigurations: string {
 
 void main() {
 	RunConfigurations config = RunConfigurations.INFERRED_TIME_ERROR;
-	string filename = "data/test-outliers/8370133083869323966/Both-Inflation/results.csv";
-	string testfilename = "data/test-outliers/8370133083869323966/Both-Inflation/2.csv";
-	string logfile = "data/ExperimentLog.txt";
-	string tag = "Testing for outliers with likelihood inflation";
+	string filename = "data/new-data/testing/onlySlope.csv";
+	string testfilename = "data/new-data/testing/onlySlope.csv";
+	string logfile = "data/new-data/testing/log-08-27.txt";
+	string tag = "Test when slope is 20";
 	StopWatch stopwatch = StopWatch(AutoStart.no);
 	bool logThisExperiment = true; //Set this to false if you don't want to write the experiment to the logfile
-	double[] observationIntervals = [0.1];
-	double[] timeErrors = [0.014];
-	/*foreach(i; 0..15) {
+	double[] observationIntervals = [1];
+	double[] timeErrors = [0.05];
+	/*foreach(i; 0..16) {
 		timeErrors ~= i * 0.001;
 	}*/
 	double[] errors = [0.1];
@@ -276,12 +279,16 @@ void main() {
 	//The first map statement will give different random seeds every program run
 	//The second map statement will ensure that all program runs are the same
 	//You can also set random seeds to those outputted by the program to replicate its results
-	ulong[] seeds = /*iota(0, 10, 1)*/
-					/*.map!(a => unpredictableSeed)*/
-					/*.map!(a => cast(ulong)a)*/
-					/*.array;*/
-					[8370133083869323966uL]
-					/*[82029386284230530uL, 13963964892208834654uL, 9135740542362501819uL, 7031332123152652807uL, 15022117507543414108uL, 6622178055635864012uL, 1522060868933556120uL, 16100634437019494802uL, 8370133083869323966uL, 8296940596219331729uL]*/;
+	ulong[] seeds = [unpredictableSeed];
+					/*iota(0, 30, 1)
+					.map!(a => unpredictableSeed)
+					.map!(a => cast(ulong)a)
+					.array;*/
+					//[2184725850363998271uL, 13756863421133855013uL, 3923093028832091568uL, 9641058712962704131uL, 6750441739301156464uL, 12889439452371464117uL, 4309632604367651527uL, 18169754287967737752uL, 11881559119032824265uL, 6047906896178715925uL, 5463702583692681672uL, 15618503194663921397uL, 85746954789088986uL, 9711882800085160881uL, 9874236789977964086uL, 15837290847893381991uL, 8501143350149999419uL, 7021624231906446134uL, 1261576710274441696uL, 17612382575480320337uL];
+					//[2628946988471595189uL, 15576251255597112670uL, 18254670456559473739uL, 13278908617683708147uL, 10571204722035012293uL, 11624264340839257134uL, 6739678969405065521uL, 4431202459603124066uL, 17728741792663068386uL, 15187366222404878511uL, 7244076727285745619uL, 9508980004864892384uL, 11462355250776930725uL, 15101795496735490436uL, 7060571836635634740uL, 15522236671386055511uL, 6883293110958960978uL, 9286824686537002161uL, 4526179969460858599uL, 12645961904936776150uL];
+					/*[8370133083869323966uL]*/
+					//[11533106597792568338, 4033616719091303501, 12266163737601295366, 16811336248043610353, 8624886549065854741, 6847397557744147839, 2882001111479385061, 2509445148698826592, 14131612931984432156, 16626537975641825998, 2295867116828041288, 11411048459360840025, 11040496366284795338, 5866271124652969060, 13704243046320118567, 6527747732338947434, 579817759488129967, 12866335293250994056, 4857661988290708509, 17364947456383381373, 2509457839729575406, 10604553522000053478, 15148233316620706376, 11309452247335074509, 12513937452241710350, 14174910347917962979, 17308290165121956148, 13140225654594366428, 17777330328431824263, 5417835852423128439]
+					//[82029386284230530uL, 13963964892208834654uL, 9135740542362501819uL, 7031332123152652807uL, 15022117507543414108uL, 6622178055635864012uL, 1522060868933556120uL, 16100634437019494802uL, 8370133083869323966uL, 8296940596219331729uL];
 	//Package the parameters into one object
 	Parameters!dimensions params = Parameters!dimensions(
 		new Vector!(double, dimensions)(1), //The initial point of the truth
@@ -328,17 +335,7 @@ void main() {
 
 	} else if (config == RunConfigurations.ALL) {
 		File(filename, "a").writeln(
-			"Seed, 
-			Observation Interval, 
-			Observation Error, 
-			Time Error, 
-			Inferred Time Offset, 
-			Inferred Time Error, 
-			Observation Time RMSE, 
-			Adjusted Observation Time RMSE, 
-			Direction Guess Rate, 
-			Control RMSE,
-			Treatment RMSE"
+			"Seed, Observation Interval, Observation Error, Time Error, Inferred Time Offset, Inferred Time Error, Observation Time RMSE, Adjusted Observation Time RMSE, Direction Guess Rate, Control RMSE, Treatment RMSE"
 		);
 	}
 	uint counter = 0;
