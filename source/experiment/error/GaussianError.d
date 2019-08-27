@@ -3,6 +3,7 @@ module experiment.error.GaussianError;
 import std.algorithm;
 import std.array;
 import std.range;
+import std.typecons;
 import mir.random;
 import mir.random.variable;
 import data.Timeseries;
@@ -30,10 +31,10 @@ class GaussianError(uint dim) : ErrorGenerator!dim {
     /**
      * Gets a point observation at a given time
      */
-    override Vector!(double, dim) generate(double time) {
+    override Tuple!(double, Vector!(double, dim)) generate(double time) {
         Vector!(double, dim) base = this.truth.value(time, this.integrator);
         double[dim] vars = iota(0, dim, 1).map!(a => NormalVariable!double(base[a], this.error[a])(*this.gen)).array;
-        return new Vector!(double, dim)(vars);
+        return tuple(time, new Vector!(double, dim)(vars));
     }
 
 }

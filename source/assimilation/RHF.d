@@ -3,7 +3,7 @@
  * Which was written by Dr. Jeff Anderson of NCAR
  * The RHF creates a prior distribution by splitting equal mass in between ensemble members in 1 dimension
  * Then it finds a posterior by pairwise multiplication between likelihood and prior
- * And then spreads the senbmel points so that there is equal mass between them in the posterior
+ * And then spreads the ensemble points so that there is equal mass between them in the posterior
  * A rank histogram is a way to approximate the distribution of a set of points by
  * placing equal mass in between each pair of points to create a histogram
  */

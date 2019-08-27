@@ -4,6 +4,7 @@ import std.algorithm;
 import std.array;
 import std.math;
 import std.range;
+import std.typecons;
 import mir.random;
 import mir.random.variable;
 import data.Timeseries;
@@ -34,11 +35,11 @@ class UniformTimeError(uint dim) : ErrorGenerator!dim {
     /**
      * Gets a point observation at a given time by first getting a time from a uniform distribution and then a position
      */
-    override Vector!(double, dim) generate(double time) {
+    override Tuple!(double, Vector!(double, dim)) generate(double time) {
         auto newTime = UniformVariable!double(time - this.timeError, time + this.timeError);
         Vector!(double, dim) base = this.truth.value(time, this.integrator);
         double[dim] vars = iota(0, dim, 1).map!(a => NormalVariable!double(base[a], this.error[a])(*this.gen)).array;
-        return new Vector!(double, dim)(vars);
+        return tuple(time, new Vector!(double, dim)(vars));
     }
 
 }
