@@ -37,7 +37,9 @@ class Experiment(uint dim) {
     Timeseries!(Vector!(double, dim)) observations;
     Timeseries!double observationTimes;
     Timeseries!double inferredObservationTimes;
+    Timeseries!double maximumLikelihoods;
     Timeseries!(Ensemble!dim) ensembleSeries;
+    
 
     /**
      * Returns the RMSE of the ensemble
@@ -70,6 +72,17 @@ class Experiment(uint dim) {
             iota(start, this.inferredObservationTimes.length, 1)
                 .fold!((sum, i) => sum + pow(this.inferredObservationTimes.times[i] - this.observationTimes.valueAtTime(this.inferredObservationTimes.times[i]) + this.inferredObservationTimes.members[i], 2))(0.0)
             / (this.inferredObservationTimes.length - start)
+        );
+    }
+
+    /**
+     * Returns the RMSE of the MLE time reports
+     */
+    double getMleTimeErrorRMSE(ulong start) {
+        return sqrt(
+            iota(start, this.maximumLikelihoods.length, 1)
+                .fold!((sum, i) => sum + pow(this.maximumLikelihoods.times[i] - this.observationTimes.valueAtTime(this.maximumLikelihoods.times[i]) + this.maximumLikelihoods.members[i], 2))(0.0)
+            / (this.maximumLikelihoods.length - start)
         );
     }
 
@@ -154,6 +167,7 @@ class Experiment(uint dim) {
         //File(testfilename, "a").writeln("Time, Observed time error, Predicted time error, Time error uncertainty, Truth,,, Observation,,, Ensemble Mean,,, Ensemble Variance,,, Likelihood Standard Deviation,,, Slope,,, Predicted time err var, Errsum, DiffErrsum, Inverse square time error, Time offset calculation denom");
         Timeseries!(Ensemble!dim) ensembleSeries = new Timeseries!(Ensemble!dim)();
         Timeseries!double inferredObservationTimes = new Timeseries!double();
+        Timeseries!double maximumLikelihoods = new Timeseries!double();
         ensembleSeries.add(0, ensemble);
         assert(ensembleSeries.members !is null, "Ensemble series is null");
         foreach(i; iota(startTime, endTime, dt)) {
@@ -192,6 +206,7 @@ class Experiment(uint dim) {
 
                     //if (abs(mean) <= 5000000 * sqrt(timeError)) {
                     inferredObservationTimes.add(i, mean);
+                    maximumLikelihoods.add(i, lik.expectedTime);
                     //} else {*/
                         //inferredObservationTimes.add(i, this.observationTimes.valueAtTime(i) - i);
                     //}
