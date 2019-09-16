@@ -9,6 +9,8 @@ module assimilation.likelihood.DiscreteExperimentalLikelihood;
 import std.algorithm; //Used for map and reduce functions (list operations)
 import std.array; //Used to convert map and reduce function outputs to arrays
 import std.conv; //Used to cast things
+import std.file;
+import std.stdio;
 import std.math; //Used to check approximate euality among doubles
 import std.parallelism; //Used to run operations in parallel for speed
 import std.range; //Used to generate iotas (ranges of numbers with steps)
@@ -23,6 +25,7 @@ import math.Matrix; //Used to do covariance computations when finding probabilit
 import math.Vector; //Used for data storage
 import utility.ArrayStats; //Used for mean, standard deviation, and covariance
 import utility.Normal; //Used to get the value of the normal probability density function
+import utility.Random;
 
 /**
  * Gets likelihood inferentially using Bayes' rule
@@ -33,7 +36,7 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
     Integrator!dim integrator;
     double minimumOffset; ///The most a true time can be less than the errant time; this is equal to the most an errant time can be more than the truth
     double maximumOffset; ///The most a true time can be more than the errant time; this is equal to the most an errant time can be less than the truth
-    uint bins; ///The amount of bins into which to sort the time likelihood
+    uint bins; ///The number of bins into which to sort the time likelihood
     double[] timeLikelihood; ///Histogram of time likelihood
     double timeOffset; ///The known offset in time; only use if testing knownErrorNormalLikelihood
     double timeError; ///The known standard deviation of time error; ^^^
@@ -226,10 +229,15 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
         //Do this a specified number of times: create a pseudo observation
         foreach(i; 0..kernels) {
             //Find a new time for the measurement
-            auto newTime = NormalVariable!double(knownTimeOffset, knownTimeError);
+            //The following commented-out code assumes gaussianity in time error
+            // auto newTime = NormalVariable!double(knownTimeOffset, knownTimeError);
+            int newTimeIndex = getWeightedRandom(this.timeLikelihood, this.gen);
+            double newTime = this.minimumOffset + (this.maximumOffset - this.minimumOffset) * newTimeIndex / this.bins;
             //Find a trajectory through the observation, then find the value on that trajectory
             //at the observation time (the pseudo-truth)
-            Vector!(double, dim) base = this.integrator.integrateTo(obs, newTime(*this.gen), 1);
+            //The following commented-out code assumes gaussianty in time error
+            // Vector!(double, dim) base = this.integrator.integrateTo(obs, newTime(*this.gen), 1);
+            Vector!(double, dim) base = this.integrator.integrateTo(obs, newTime, 1);
             NormalVariable!double normal;
             static foreach (j; 0..dim) {
                 normal = NormalVariable!double(base[j], this.stateError[j]);
@@ -453,6 +461,25 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
             //that is represented by the ensemble
             binQuantities[i] = multivariateNormalVal!dim(obs, binValues[i], obsErrorCovariance + ensembleCovariance);
         }
+        //MLE
+        int index1 = 0;
+        double max1 = -1;
+        for (int i = 0; i < binQuantities.length; i++) {
+            if (binQuantities[i] > max1) {
+                index1 = i;
+                max1 = binQuantities[i];
+            }
+        }
+        //MLE with anding
+        int index2 = 0;
+        double max2 = -1;
+        for (int i = 0; i < binQuantities.length; i++) {
+                if (binQuantities[i] * this.timeLikelihood[i] > max2) {
+                index2 = i;
+                max2 = binQuantities[i] * this.timeLikelihood[i];
+            }
+        }
+        File("data/testpi2.csv", "a").writeln(binMiddles[index1], ", ", binMiddles[index2]);
         //In parallel, update the time likelihood with the new inferred likelihood
         if(this.multiply) {
             foreach(index, ref component; binQuantities.parallel) {

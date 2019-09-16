@@ -30,6 +30,7 @@ import math.Vector;
 import systems.Line;
 import systems.System;
 import systems.Lorenz63;
+import utility.ArrayStats;
 
 enum dimensions = 3; ///How many dimensions the experiment is being run in
 enum verboseRun = false; ///Whether to mention in detail what's going on in the program run
@@ -231,6 +232,9 @@ void run(Parameters!dimensions params, double observationInterval, double timeEr
 		static if (verboseRun) writeln("Successfully ran ensemble.");
 		immutable double treatmentRMSE = RMSE!dimensions(treatment.ensembleSeries, treatment.truth);
 		DiscreteExperimentalLikelihood!dimensions treatmentLikelihood = cast(DiscreteExperimentalLikelihood!dimensions) treatment.likelihoodGetter;
+		//Get expected time and time deviation by sampling
+		double[] mleGuesses = treatment.maximumLikelihoods.members;
+		//Return data
 		writeln("Treatment RMSE for time error ", timeError, " is ", treatmentRMSE);
 		File(params.datafile, "a").writeln(
 			"'", seed, ",",
@@ -239,7 +243,10 @@ void run(Parameters!dimensions params, double observationInterval, double timeEr
 			timeError, ",",
 			treatmentLikelihood.expectedTime, ",", 
 			treatmentLikelihood.timeDeviation, ",", 
+			mean(mleGuesses), ",",
+			standardDeviation!1(mleGuesses), ",",
 			treatment.getTimeErrorRMSE(0), ",", 
+			treatment.getMleTimeErrorRMSE(0), ","
 			treatment.getInferredTimeErrorRMSE(0), ",", 
 			treatment.getDirectionGuessRate(0), "," ,
 			controlRMSE, ",",
@@ -261,12 +268,12 @@ enum RunConfigurations: string {
 void main() {
 	RunConfigurations config = RunConfigurations.INFERRED_TIME_ERROR;
 	string filename = "data/new-data/testing/onlySlope.csv";
-	string testfilename = "data/new-data/testing/onlySlope.csv";
-	string logfile = "data/new-data/testing/log-08-27.txt";
-	string tag = "Test when slope is 20";
+	string testfilename = "data/new-data/testing/onlySlope2.csv";
+	string logfile = "data/new-data/testing/log-09-04.txt";
+	string tag = "Test weird ways of finding E_t";
 	StopWatch stopwatch = StopWatch(AutoStart.no);
 	bool logThisExperiment = true; //Set this to false if you don't want to write the experiment to the logfile
-	double[] observationIntervals = [1];
+	double[] observationIntervals = [0.5];
 	double[] timeErrors = [0.05];
 	/*foreach(i; 0..16) {
 		timeErrors ~= i * 0.001;
@@ -335,7 +342,7 @@ void main() {
 
 	} else if (config == RunConfigurations.ALL) {
 		File(filename, "a").writeln(
-			"Seed, Observation Interval, Observation Error, Time Error, Inferred Time Offset, Inferred Time Error, Observation Time RMSE, Adjusted Observation Time RMSE, Direction Guess Rate, Control RMSE, Treatment RMSE"
+			"Seed, Observation Interval, Observation Error, Time Error, MLE Offset, MLE Error, Inferred Time Offset, Inferred Time Error, Observation Time RMSE, MLE Observation Time RMSE, Adjusted Observation Time RMSE, Direction Guess Rate, Control RMSE, Treatment RMSE"
 		);
 	}
 	uint counter = 0;
