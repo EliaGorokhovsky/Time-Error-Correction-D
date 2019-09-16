@@ -1,28 +1,28 @@
 module utility.Random;
 
-import std.random;
-
-/**
- * Normalizes a discrete PDF
- */
-double[] normalize(double[] distribution) {
-
-}
+import std.algorithm;
+import std.conv;
+import std.range;
+import mir.random;
+import mir.random.variable;
 
 /**
  * Get a weighted random number from a discrete distribution likelihood
  */
 uint getWeightedRandom(double[] pdf, Random* gen) {
-    double probability = uniform(0, 1, &gen);
-    double sum = 0.0;
-    double pdfArea = sum(pdf);
-    if (pdfArea = 0) {
-        return choice(0..(pdf.length + 1), &gen);
+    double pdfArea = pdf.sum();
+    if (pdfArea == 0) {
+        auto uniformVar = UniformVariable!int(0, (pdf.length - 1).to!int);
+        return uniformVar(gen);
     }
+    auto uniformVar = UniformVariable!double(0, 1);
+    double probability = uniformVar(gen);
+    double cumulativeProbability = 0.0;
     foreach(i; 0..pdf.length) {
-        sum += pdf[i] / pdfArea;
-        if (probability < sum) {
-            return i;
+        cumulativeProbability += pdf[i] / pdfArea;
+        if (probability < cumulativeProbability) {
+            return i.to!uint;
         }
     }
+    assert(0);
 }
