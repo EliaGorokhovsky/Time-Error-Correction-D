@@ -461,25 +461,6 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
             //that is represented by the ensemble
             binQuantities[i] = multivariateNormalVal!dim(obs, binValues[i], obsErrorCovariance + ensembleCovariance);
         }
-        //MLE
-        int index1 = 0;
-        double max1 = -1;
-        for (int i = 0; i < binQuantities.length; i++) {
-            if (binQuantities[i] > max1) {
-                index1 = i;
-                max1 = binQuantities[i];
-            }
-        }
-        //MLE with anding
-        int index2 = 0;
-        double max2 = -1;
-        for (int i = 0; i < binQuantities.length; i++) {
-                if (binQuantities[i] * this.timeLikelihood[i] > max2) {
-                index2 = i;
-                max2 = binQuantities[i] * this.timeLikelihood[i];
-            }
-        }
-        File("data/testpi2.csv", "a").writeln(binMiddles[index1], ", ", binMiddles[index2]);
         //In parallel, update the time likelihood with the new inferred likelihood
         if(this.multiply) {
             foreach(index, ref component; binQuantities.parallel) {
