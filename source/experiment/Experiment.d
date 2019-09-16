@@ -195,7 +195,7 @@ class Experiment(uint dim) {
                     //} else {*/
                         //inferredObservationTimes.add(i, this.observationTimes.valueAtTime(i) - i);
                     //}
-                    /*File(testfilename, "a").writeln(
+                    File(testfilename, "a").writeln(
                         i, ", ", 
                         this.observationTimes.valueAtTime(i) - i, ", ", 
                         mean, ", ", 
@@ -211,7 +211,7 @@ class Experiment(uint dim) {
                         diffErrSum, ", ", 
                         inverseSquareTimeError, ",", 
                         denom
-                    );*/
+                    );
                 } 
             }
             /*if(i % 5 == 0) { 

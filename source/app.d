@@ -261,12 +261,12 @@ enum RunConfigurations: string {
 void main() {
 	RunConfigurations config = RunConfigurations.INFERRED_TIME_ERROR;
 	string filename = "data/new-data/testing/onlySlope.csv";
-	string testfilename = "data/new-data/testing/onlySlope.csv";
-	string logfile = "data/new-data/testing/log-08-27.txt";
-	string tag = "Test when slope is 20";
+	string testfilename = "data/new-data/testing/onlySlope2.csv";
+	string logfile = "data/new-data/testing/log-09-04.txt";
+	string tag = "Test weird ways of finding E_t";
 	StopWatch stopwatch = StopWatch(AutoStart.no);
 	bool logThisExperiment = true; //Set this to false if you don't want to write the experiment to the logfile
-	double[] observationIntervals = [1];
+	double[] observationIntervals = [0.5];
 	double[] timeErrors = [0.05];
 	/*foreach(i; 0..16) {
 		timeErrors ~= i * 0.001;
