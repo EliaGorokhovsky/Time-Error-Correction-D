@@ -230,13 +230,14 @@ class DiscreteExperimentalLikelihood(uint dim) : LikelihoodGetter!dim {
         foreach(i; 0..kernels) {
             //Find a new time for the measurement
             //The following commented-out code assumes gaussianity in time error
-            // auto newTime = NormalVariable!double(knownTimeOffset, knownTimeError);
+            //double newTime = NormalVariable!double(knownTimeOffset, knownTimeError)(*this.gen);
+            //The following code works best if time error is not gaussian
             int newTimeIndex = getWeightedRandom(this.timeLikelihood, this.gen);
-            double newTime = this.minimumOffset + (this.maximumOffset - this.minimumOffset) * newTimeIndex / this.bins;
+            double newTimeMin = this.minimumOffset + (this.maximumOffset - this.minimumOffset) * newTimeIndex / this.bins;
+            double newTimeMax = this.minimumOffset + (this.maximumOffset - this.minimumOffset) * (newTimeIndex + 1) / this.bins;
+            double newTime = UniformVariable!double(newTimeMin, newTimeMax)(*this.gen);
             //Find a trajectory through the observation, then find the value on that trajectory
             //at the observation time (the pseudo-truth)
-            //The following commented-out code assumes gaussianty in time error
-            // Vector!(double, dim) base = this.integrator.integrateTo(obs, newTime(*this.gen), 1);
             Vector!(double, dim) base = this.integrator.integrateTo(obs, newTime, 1);
             NormalVariable!double normal;
             static foreach (j; 0..dim) {

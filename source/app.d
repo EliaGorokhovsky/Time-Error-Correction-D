@@ -266,18 +266,18 @@ enum RunConfigurations: string {
 }
 
 void main() {
-	RunConfigurations config = RunConfigurations.INFERRED_TIME_ERROR;
-	string filename = "data/new-data/testing/test-09-16.csv";
+	RunConfigurations config = RunConfigurations.ALL;
+	string filename = "data/new-data/testing/data-09-16.csv";
 	string testfilename = "data/new-data/testing/test-09-16-1.csv";
-	string logfile = "data/new-data/testing/log-09-16.txt";
+	string logfile = "data/new-data/testing/log-09-16-1.txt";
 	string tag = "Test averaging the expected values every time instead of using calculation";
 	StopWatch stopwatch = StopWatch(AutoStart.no);
 	bool logThisExperiment = true; //Set this to false if you don't want to write the experiment to the logfile
-	double[] observationIntervals = [0.5];
-	double[] timeErrors = [0.05];
-	/*foreach(i; 0..16) {
+	double[] observationIntervals = [0.1, 0.5, 1];
+	double[] timeErrors = [];
+	foreach(i; 0..16) {
 		timeErrors ~= i * 0.001;
-	}*/
+	}
 	double[] errors = [0.1];
 	/*foreach(i; 1..500) {
 		errors ~= i * 0.02;
@@ -286,11 +286,11 @@ void main() {
 	//The first map statement will give different random seeds every program run
 	//The second map statement will ensure that all program runs are the same
 	//You can also set random seeds to those outputted by the program to replicate its results
-	ulong[] seeds = [unpredictableSeed];
-					/*iota(0, 30, 1)
+	ulong[] seeds = //[unpredictableSeed];
+					iota(0, 30, 1)
 					.map!(a => unpredictableSeed)
-					.map!(a => cast(ulong)a)
-					.array;*/
+					/*.map!(a => cast(ulong)a)*/
+					.array;
 					//[2184725850363998271uL, 13756863421133855013uL, 3923093028832091568uL, 9641058712962704131uL, 6750441739301156464uL, 12889439452371464117uL, 4309632604367651527uL, 18169754287967737752uL, 11881559119032824265uL, 6047906896178715925uL, 5463702583692681672uL, 15618503194663921397uL, 85746954789088986uL, 9711882800085160881uL, 9874236789977964086uL, 15837290847893381991uL, 8501143350149999419uL, 7021624231906446134uL, 1261576710274441696uL, 17612382575480320337uL];
 					//[2628946988471595189uL, 15576251255597112670uL, 18254670456559473739uL, 13278908617683708147uL, 10571204722035012293uL, 11624264340839257134uL, 6739678969405065521uL, 4431202459603124066uL, 17728741792663068386uL, 15187366222404878511uL, 7244076727285745619uL, 9508980004864892384uL, 11462355250776930725uL, 15101795496735490436uL, 7060571836635634740uL, 15522236671386055511uL, 6883293110958960978uL, 9286824686537002161uL, 4526179969460858599uL, 12645961904936776150uL];
 					/*[8370133083869323966uL]*/
